@@ -1,2 +1,1 @@
-# TransformersExplClinicalCoding
-Transformers for Explainable Clinical Coding
+# Transformers for Explainable Clinical Coding
