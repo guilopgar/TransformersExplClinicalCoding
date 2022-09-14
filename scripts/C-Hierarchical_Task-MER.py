@@ -88,7 +88,6 @@ test_gs_path = corpus_path + "test-set/" + sub_task_path
 import tensorflow as tf
 
 # Auxiliary components
-import sys
 sys.path.insert(0, utils_path)
 from nlp_utils import *
 
