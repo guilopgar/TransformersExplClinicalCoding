@@ -28,8 +28,6 @@ if len(sys.argv) > 1:
     random_seed = int(sys.argv[-2])
     random_exec = int(sys.argv[-1])
 
-hier_iob_exec = random_exec
-    
 print("Model name:", model_name, 
       "| nº epochs:", epochs,
       "| random seed:", random_seed,
