@@ -4760,6 +4760,42 @@ def calculate_ner_metrics(gs, pred, subtask='ner'):
     return round(P, 4), round(R, 4), round(F1, 4)
 
 
+def calculate_men_metrics(gs, pred):
+    """
+    Code adapted from https://github.com/TeMU-BSC/cantemist-evaluation-library/blob/master/src/cantemist_ner_norm.py
+    """
+    
+    # Predicted Positives:
+    pred = pred.drop_duplicates(subset=['clinical_case', "offset", "code_pred"])
+    
+    # Gold Standard Positives:
+    gs = gs.drop_duplicates(subset=['clinical_case', "offset", "code_gs"])
+    
+    # Eliminate predictions not in GS (prediction needs to be in same clinical
+    # case and to have the exact same offset to be considered valid!!!!)
+    df_sel = pd.merge(pred.rename(columns={"code_pred": "code"}), 
+                      gs.rename(columns={"code_gs": "code"}), 
+                      how="right",
+                      on=["clinical_case", "offset", "code"])
+    
+    is_valid = df_sel.apply(lambda x: x.isnull().any()==False, axis=1)
+    df_sel = df_sel.assign(is_valid=is_valid.values)
+        
+    # True Positives:
+    TP = df_sel[df_sel["is_valid"] == True].shape[0]
+    
+    if (TP) == 0:
+        ACC = 0
+    else:
+        ACC = TP / gs.shape[0]
+    
+    
+    if (ACC > 1):
+        warnings.warn('Metric greater than 1! You have encountered an undetected bug, please, contact antonio.miranda@bsc.es!')
+                                            
+    return round(ACC, 4)
+
+
 def several_codes_one_annot(df_sel):
     
     # If any of the two valid codes is predicted, give both as good
@@ -5665,7 +5701,7 @@ class EarlyNER_IOB_Code(tf.keras.callbacks.Callback):
         self.model.set_weights(self.best_weights)
 
 
-
+from tqdm import tqdm
 def create_cls_emb_y_samples(df_ann, doc_list, arr_frag, arr_start_end, arr_word_id, arr_ind, 
                              seq_len, empty_samples=False, subtask="norm-iob_code", 
                              only_mention=False):
