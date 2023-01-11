@@ -16,8 +16,8 @@
 
 
 model_name = "mbert_galen"
-epochs = 92
-random_seed = 0
+epochs = 68
+random_seed = 1
 random_exec = 1
 
 
@@ -187,7 +187,7 @@ LOGITS = False
 # In[14]:
 
 
-TYPE_ANN = 'DIAGNOSTICO'
+TYPE_ANN = 'PROCEDIMIENTO'
 TYPE_TASK = TYPE_ANN[0].lower()
 CODE_SEP = '.' if TYPE_ANN == 'DIAGNOSTICO' else ''
 
@@ -220,33 +220,13 @@ EMPTY_SAMPLES = False
 # In[19]:
 
 
-JOB_NAME = TYPE_TASK + "_hier_task_cls_" + model_name + "_" + str(random_exec)
+JOB_NAME = TYPE_TASK + "_hier_task_cls_train_" + model_name + "_" + str(random_exec)
 print("\n" + JOB_NAME)
-
-
-#  Additional predictions<br>
-# Ensemble
-
-# In[20]:
-
-
-RES_DIR_ENS = RES_DIR + "ensemble/"
-ens_model_name_arr = [model_name] + ens_multi_model_name
-df_iob_preds_name_ens = TYPE_TASK + "_hier_task_iob_"
-
-
-# Multi-task
-
-# In[21]:
-
-
-multi_iob_exec = random_exec
-df_iob_preds_name_multi = "ner_" + TYPE_TASK + "_multi_task_" + model_name + "_" + str(multi_iob_exec)
 
 
 # In[6]:
 
-# In[22]:
+# In[20]:
 
 
 codes_d_path = root_path + "datasets/final_dataset_v4_to_publish/codiesp_codes/codiesp-" + TYPE_TASK.upper() + "_codes.tsv"
@@ -262,7 +242,7 @@ codes_d_path = root_path + "datasets/final_dataset_v4_to_publish/codiesp_codes/c
 
 # In[7]:
 
-# In[23]:
+# In[21]:
 
 
 train_path = corpus_path + "train/text_files/"
@@ -271,24 +251,11 @@ train_data = load_text_files(train_files, train_path)
 df_text_train = pd.DataFrame({'doc_id': [s.split('.txt')[0] for s in train_files], 'raw_text': train_data})
 
 
-# ### Development corpus
-
-# In[8]:
-
-# In[24]:
-
-
-dev_path = corpus_path + "dev/text_files/"
-dev_files = [f for f in os.listdir(dev_path) if os.path.isfile(dev_path + f) and f.split('.')[-1] == "txt"]
-dev_data = load_text_files(dev_files, dev_path)
-df_text_dev = pd.DataFrame({'doc_id': [s.split('.txt')[0] for s in dev_files], 'raw_text': dev_data})
-
-
 # ### Test corpus
 
 # In[9]:
 
-# In[25]:
+# In[22]:
 
 
 test_path = corpus_path + "test/text_files/"
@@ -305,7 +272,7 @@ df_text_test = pd.DataFrame({'doc_id': [s.split('.txt')[0] for s in test_files],
 
 # In[10]:
 
-# In[26]:
+# In[23]:
 
 
 df_codes_train_ner = pd.read_table(corpus_path + "train/trainX.tsv", sep='\t', header=None)
@@ -318,7 +285,7 @@ df_codes_train_ner['disc'] = df_codes_train_ner['location'].apply(lambda x: ';' 
 
 # In[11]:
 
-# In[27]:
+# In[24]:
 
 
 df_codes_train_ner = df_codes_train_ner[df_codes_train_ner['type'] == TYPE_ANN]
@@ -328,7 +295,7 @@ df_codes_train_ner = df_codes_train_ner[df_codes_train_ner['type'] == TYPE_ANN]
 
 # In[12]:
 
-# In[28]:
+# In[25]:
 
 
 df_codes_train_ner_final = process_labels_norm_prueba(df_ann=df_codes_train_ner[["doc_id", "type", "code", "word", "location"]])
@@ -338,7 +305,7 @@ df_codes_train_ner_final = process_labels_norm_prueba(df_ann=df_codes_train_ner[
 
 # In[13]:
 
-# In[29]:
+# In[26]:
 
 
 df_codes_train_ner_final['length'] = df_codes_train_ner_final.apply(lambda x: x['end'] - x['start'], axis=1)
@@ -351,7 +318,7 @@ df_codes_train_ner_final = df_codes_train_ner_final[df_codes_train_ner_final['le
 
 # Continiuous
 
-# In[30]:
+# In[27]:
 
 
 df_codes_train_ner_final_cont = df_codes_train_ner_final[df_codes_train_ner_final['disc'] == 0].copy()
@@ -362,7 +329,7 @@ df_codes_train_ner_final_cont['disc'] = df_codes_train_ner_final_cont['disc'].as
 
 # Discontinuous
 
-# In[31]:
+# In[28]:
 
 
 df_codes_train_ner_final_disc = restore_disc_ann(df_ann=df_codes_train_ner[df_codes_train_ner['disc']], 
@@ -371,7 +338,7 @@ df_codes_train_ner_final_disc = restore_disc_ann(df_ann=df_codes_train_ner[df_co
 
 # In[16]:
 
-# In[32]:
+# In[29]:
 
 
 df_codes_train_ner_final_disc['start'] = df_codes_train_ner_final_disc['location'].apply(lambda x: int(x.split(' ')[0]))
@@ -384,7 +351,7 @@ df_codes_train_ner_final_disc['end'] = df_codes_train_ner_final_disc['location']
 
 # Concat
 
-# In[33]:
+# In[30]:
 
 
 cols_concat = ['doc_id', 'type', 'code', 'word', 'location', 'start', 'end', 'disc']
@@ -396,7 +363,7 @@ df_codes_train_ner_final = pd.concat([df_codes_train_ner_final_cont[cols_concat]
 
 # In[18]:
 
-# In[34]:
+# In[31]:
 
 
 df_codes_train_ner_final['direction'] = df_codes_train_ner_final.apply(check_ann_left_right_direction, axis=1)
@@ -404,7 +371,7 @@ df_codes_train_ner_final['direction'] = df_codes_train_ner_final.apply(check_ann
 
 # In[19]:
 
-# In[35]:
+# In[32]:
 
 
 df_codes_train_ner_final = df_codes_train_ner_final[df_codes_train_ner_final['direction']]
@@ -416,7 +383,7 @@ df_codes_train_ner_final = df_codes_train_ner_final[df_codes_train_ner_final['di
 
 # Sentence-Split data
 
-# In[36]:
+# In[33]:
 
 
 ss_sub_corpus_path = ss_corpus_path + "train/"
@@ -426,7 +393,7 @@ ss_dict_train = load_ss_files(ss_files, ss_sub_corpus_path)
 
 # In[21]:
 
-# In[37]:
+# In[34]:
 
 
 df_mult_sent_train, df_one_sent_train, df_no_sent_train = check_ann_span_sent(df_ann=df_codes_train_ner_final, 
@@ -435,7 +402,7 @@ df_mult_sent_train, df_one_sent_train, df_no_sent_train = check_ann_span_sent(df
 
 # In[22]:
 
-# In[38]:
+# In[35]:
 
 
 df_codes_train_ner_final = df_one_sent_train.copy()
@@ -443,7 +410,7 @@ df_codes_train_ner_final = df_one_sent_train.copy()
 
 # In[23]:
 
-# In[39]:
+# In[36]:
 
 
 print(df_codes_train_ner_final.disc.value_counts())
@@ -451,7 +418,7 @@ print(df_codes_train_ner_final.disc.value_counts())
 
 # In[24]:
 
-# In[40]:
+# In[37]:
 
 
 df_codes_train_ner_final.sort_values(['doc_id', 'start', 'end'], inplace=True)
@@ -463,7 +430,7 @@ df_codes_train_ner_final.sort_values(['doc_id', 'start', 'end'], inplace=True)
 
 # In[26]:
 
-# In[41]:
+# In[38]:
 
 
 if TYPE_TASK == 'd':
@@ -474,196 +441,21 @@ else:
     df_codes_train_ner_final["code_suf"] = df_codes_train_ner_final["code"].apply(lambda x: None if len(x) < 7 else x[4:7])
 
 
-# ### Development corpus
-
-# In[27]:
-
-# In[42]:
-
-
-df_codes_dev_ner = pd.read_table(corpus_path + "dev/devX.tsv", sep='\t', header=None)
-df_codes_dev_ner.columns = ["doc_id", "type", "code", "word", "location"]
-df_codes_dev_ner = df_codes_dev_ner[~df_codes_dev_ner[['doc_id', 'type', 'location']].duplicated(keep='first')]
-df_codes_dev_ner['disc'] = df_codes_dev_ner['location'].apply(lambda x: ';' in x)
-
-
-# Select one type of annotations:
-
-# In[28]:
-
-# In[43]:
-
-
-df_codes_dev_ner = df_codes_dev_ner[df_codes_dev_ner['type'] == TYPE_ANN]
-
-
-# Split discontinuous annotations:
-
-# In[29]:
-
-# In[44]:
-
-
-df_codes_dev_ner_final = process_labels_norm_prueba(df_ann=df_codes_dev_ner[["doc_id", "type", "code", "word", "location"]])
-
-
-# Remove annotations of zero length:
-
-# In[30]:
-
-# In[45]:
-
-
-df_codes_dev_ner_final['length'] = df_codes_dev_ner_final.apply(lambda x: x['end'] - x['start'], axis=1)
-df_codes_dev_ner_final = df_codes_dev_ner_final[df_codes_dev_ner_final['length'] > 0]
-
-
-# Separate continuous and discontinuous annotations:
-
-# In[31]:
-
-# Continiuous
-
-# In[46]:
-
-
-df_codes_dev_ner_final_cont = df_codes_dev_ner_final[df_codes_dev_ner_final['disc'] == 0].copy()
-df_codes_dev_ner_final_cont['disc'] = df_codes_dev_ner_final_cont['disc'].astype(bool)
-
-
-# In[32]:
-
-# Discontinuous
-
-# In[47]:
-
-
-df_codes_dev_ner_final_disc = restore_disc_ann(df_ann=df_codes_dev_ner[df_codes_dev_ner['disc']], 
-                    df_ann_final=df_codes_dev_ner_final[df_codes_dev_ner_final['disc'] == 1])
-
-
-# In[33]:
-
-# In[48]:
-
-
-df_codes_dev_ner_final_disc['start'] = df_codes_dev_ner_final_disc['location'].apply(lambda x: int(x.split(' ')[0]))
-df_codes_dev_ner_final_disc['end'] = df_codes_dev_ner_final_disc['location'].apply(lambda x: int(x.split(' ')[-1]))
-
-
-# Concatenate continuous and discontinuous annotations:
-
-# In[34]:
-
-# Concat
-
-# In[49]:
-
-
-cols_concat = ['doc_id', 'type', 'code', 'word', 'location', 'start', 'end', 'disc']
-df_codes_dev_ner_final = pd.concat([df_codes_dev_ner_final_cont[cols_concat], 
-                                      df_codes_dev_ner_final_disc[cols_concat]])
-
-
-# Now, we remove the right-to-left (text wise) discontinuous annotations:
-
-# In[35]:
-
-# In[50]:
-
-
-df_codes_dev_ner_final['direction'] = df_codes_dev_ner_final.apply(check_ann_left_right_direction, axis=1)
-
-
-# In[36]:
-
-# In[51]:
-
-
-df_codes_dev_ner_final = df_codes_dev_ner_final[df_codes_dev_ner_final['direction']]
-
-
-# We only select the annotations fully contained in a single sentence:
-
-# In[37]:
-
-# Sentence-Split data
-
-# In[52]:
-
-
-ss_sub_corpus_path = ss_corpus_path + "dev/"
-ss_files = [f for f in os.listdir(ss_sub_corpus_path) if os.path.isfile(ss_sub_corpus_path + f)]
-ss_dict_dev = load_ss_files(ss_files, ss_sub_corpus_path)
-
-
-# In[38]:
-
-# In[53]:
-
-
-df_mult_sent_dev, df_one_sent_dev, df_no_sent_dev = check_ann_span_sent(df_ann=df_codes_dev_ner_final, 
-                                                                             ss_dict=ss_dict_dev)
-
-
-# In[39]:
-
-# In[54]:
-
-
-df_codes_dev_ner_final = df_one_sent_dev.copy()
-
-
-# In[40]:
-
-# In[55]:
-
-
-print(df_codes_dev_ner_final.disc.value_counts())
-
-
-# In[41]:
-
-# In[56]:
-
-
-df_codes_dev_ner_final.sort_values(['doc_id', 'start', 'end'], inplace=True)
-
-
-# In[42]:
-
-# Code splitting
-
-# In[43]:
-
-# In[57]:
-
-
-if TYPE_TASK == 'd':
-    df_codes_dev_ner_final["code_pre"] = df_codes_dev_ner_final["code"].apply(lambda x: x.split('.')[0])
-    df_codes_dev_ner_final["code_suf"] = df_codes_dev_ner_final["code"].apply(lambda x: None if not '.' in x else x.split('.')[1])
-else:
-    df_codes_dev_ner_final["code_pre"] = df_codes_dev_ner_final["code"].apply(lambda x: x[:4])
-    df_codes_dev_ner_final["code_suf"] = df_codes_dev_ner_final["code"].apply(lambda x: None if len(x) < 7 else x[4:7])
-
-
 # ## Creation of annotated sequences<br>
 # <br>
 # We create the corpus used to fine-tune the transformer model on a NER task. In this way, we split the texts into sentences, and convert them into sequences of subtokens. Also, each generated subtoken is assigned a NER label in IOB-2 format.
 
 # In[44]:
 
-# In[58]:
+# In[39]:
 
 
-train_dev_codes_pre = sorted(set(df_codes_dev_ner_final["code_pre"].values).union(set(
-    df_codes_train_ner_final["code_pre"].values
-)))
+train_dev_codes_pre = sorted(set(df_codes_train_ner_final["code_pre"].values))
 
 
 # In[45]:
 
-# In[59]:
+# In[40]:
 
 
 len(train_dev_codes_pre)
@@ -671,15 +463,15 @@ len(train_dev_codes_pre)
 
 # In[46]:
 
-# In[60]:
+# In[41]:
 
 
-train_dev_codes_suf = sorted(set(df_codes_dev_ner_final[df_codes_dev_ner_final['code_suf'].apply(lambda x: x is not None)]["code_suf"].values).union(set(df_codes_train_ner_final[df_codes_train_ner_final['code_suf'].apply(lambda x: x is not None)]["code_suf"].values))) 
+train_dev_codes_suf = sorted(set(df_codes_train_ner_final[df_codes_train_ner_final['code_suf'].apply(lambda x: x is not None)]["code_suf"].values)) 
 
 
 # In[47]:
 
-# In[61]:
+# In[42]:
 
 
 len(train_dev_codes_suf)
@@ -689,7 +481,7 @@ len(train_dev_codes_suf)
 
 # Create IOB-2 and Clinical-Coding label encoders as dict (more computationally efficient)
 
-# In[62]:
+# In[43]:
 
 
 iob_lab_encoder = {"B": 0, "I": 1, "O": 2}
@@ -698,7 +490,7 @@ iob_lab_decoder = {0: "B", 1: "I", 2: "O"}
 
 # Code-pre
 
-# In[63]:
+# In[44]:
 
 
 code_pre_lab_encoder = {}
@@ -716,7 +508,7 @@ if code_strat.upper() == "O":
 
 # Code-suf
 
-# In[64]:
+# In[45]:
 
 
 code_suf_lab_encoder = {}
@@ -730,7 +522,7 @@ for code in train_dev_codes_suf:
 
 # Add "O" label to code-suf, since some codes do not have suffix
 
-# In[65]:
+# In[46]:
 
 
 code_suf_lab_encoder["O"] = i
@@ -739,7 +531,7 @@ code_suf_lab_decoder[i] = "O"
 
 # In[49]:
 
-# In[66]:
+# In[47]:
 
 
 print(len(iob_lab_encoder), len(iob_lab_decoder))
@@ -747,7 +539,7 @@ print(len(iob_lab_encoder), len(iob_lab_decoder))
 
 # In[50]:
 
-# In[67]:
+# In[48]:
 
 
 print(len(code_pre_lab_encoder), len(code_pre_lab_decoder))
@@ -755,7 +547,7 @@ print(len(code_pre_lab_encoder), len(code_pre_lab_decoder))
 
 # In[51]:
 
-# In[68]:
+# In[49]:
 
 
 print(len(code_suf_lab_encoder), len(code_suf_lab_decoder))
@@ -767,15 +559,15 @@ print(len(code_suf_lab_encoder), len(code_suf_lab_decoder))
 
 # In[53]:
 
-# In[69]:
+# In[50]:
 
 
-train_dev_codes = sorted(set(df_codes_dev_ner_final["code"].values).union(set(df_codes_train_ner_final["code"].values))) 
+train_dev_codes = sorted(set(df_codes_train_ner_final["code"].values)) 
 
 
 # In[54]:
 
-# In[70]:
+# In[51]:
 
 
 print(len(train_dev_codes))
@@ -783,13 +575,13 @@ print(len(train_dev_codes))
 
 # In[55]:
 
-# In[71]:
+# In[52]:
 
 
 from sklearn.preprocessing import MultiLabelBinarizer
 
 
-# In[72]:
+# In[53]:
 
 
 mlb_encoder = MultiLabelBinarizer()
@@ -802,7 +594,7 @@ mlb_encoder.fit([train_dev_codes])
 
 # In[56]:
 
-# In[73]:
+# In[54]:
 
 
 train_doc_list = sorted(set(df_codes_train_ner_final["doc_id"]))
@@ -810,39 +602,18 @@ train_doc_list = sorted(set(df_codes_train_ner_final["doc_id"]))
 
 # In[57]:
 
-# In[74]:
+# In[55]:
+
+
+df_mock = pd.DataFrame({"doc_id": [], "start": [], "end": [], "disc": []})
+
+
+# In[56]:
 
 
 train_ind, train_att, train_type, train_y, train_text_y, train_frag, train_start_end_frag,                 train_word_id = ss_create_input_data_ner(df_text=df_text_train, text_col=text_col, 
-                                    df_ann=df_codes_dev_ner_final, df_ann_text=df_codes_dev_ner_final, # ignore
+                                    df_ann=df_mock, df_ann_text=df_mock, # ignore
                                     doc_list=train_doc_list, ss_dict=ss_dict_train,
-                                    tokenizer=tokenizer, 
-                                    lab_encoder_list=[iob_lab_encoder, iob_lab_encoder], 
-                                    text_label_encoder=mlb_encoder, seq_len=SEQ_LEN, ign_value=IGNORE_VALUE, 
-                                    strategy=ANN_STRATEGY, greedy=GREEDY, 
-                                    subtask=subtask_ann, code_strat=code_strat)
-
-
-# ### Development corpus<br>
-# <br>
-# Only development texts with NER annotations are considered:
-
-# In[58]:
-
-# In[75]:
-
-
-dev_doc_list = sorted(set(df_codes_dev_ner_final["doc_id"]))
-
-
-# In[59]:
-
-# In[76]:
-
-
-dev_ind, dev_att, dev_type, dev_y, dev_text_y, dev_frag, dev_start_end_frag,                 dev_word_id = ss_create_input_data_ner(df_text=df_text_dev, text_col=text_col, 
-                                    df_ann=df_codes_train_ner_final, df_ann_text=df_codes_train_ner_final, # ignore
-                                    doc_list=dev_doc_list, ss_dict=ss_dict_dev,
                                     tokenizer=tokenizer, 
                                     lab_encoder_list=[iob_lab_encoder, iob_lab_encoder], 
                                     text_label_encoder=mlb_encoder, seq_len=SEQ_LEN, ign_value=IGNORE_VALUE, 
@@ -856,7 +627,7 @@ dev_ind, dev_att, dev_type, dev_y, dev_text_y, dev_frag, dev_start_end_frag,    
 
 # In[60]:
 
-# In[77]:
+# In[57]:
 
 
 test_doc_list = sorted(set(df_text_test["doc_id"]))
@@ -868,7 +639,7 @@ test_doc_list = sorted(set(df_text_test["doc_id"]))
 
 # In[62]:
 
-# In[78]:
+# In[58]:
 
 
 ss_sub_corpus_path = ss_corpus_path + "test/"
@@ -878,11 +649,11 @@ ss_dict_test = load_ss_files(ss_files, ss_sub_corpus_path)
 
 # In[63]:
 
-# In[79]:
+# In[59]:
 
 
 test_ind, test_att, test_type, test_y, test_text_y, test_frag, test_start_end_frag,                 test_word_id = ss_create_input_data_ner(df_text=df_text_test, text_col=text_col, 
-                                    df_ann=df_codes_dev_ner_final, df_ann_text=df_codes_dev_ner_final, # ignore
+                                    df_ann=df_mock, df_ann_text=df_mock, # ignore
                                     doc_list=test_doc_list, ss_dict=ss_dict_test,
                                     tokenizer=tokenizer, 
                                     lab_encoder_list=[iob_lab_encoder, iob_lab_encoder], 
@@ -891,53 +662,13 @@ test_ind, test_att, test_type, test_y, test_text_y, test_frag, test_start_end_fr
                                     subtask=subtask_ann, code_strat=code_strat)
 
 
-# ### Training & Development corpus<br>
-# <br>
-# We merge the previously generated datasets:
-
-# In[64]:
-
-# Indices
-
-# In[80]:
-
-
-train_dev_ind = np.concatenate((train_ind, dev_ind))
-
-
-# In[65]:
-
-# In[81]:
-
-
-print(train_dev_ind.shape)
-
-
-# In[66]:
-
-# Attention
-
-# In[82]:
-
-
-train_dev_att = np.concatenate((train_att, dev_att))
-
-
-# In[67]:
-
-# In[83]:
-
-
-print(train_dev_att.shape)
-
-
 # In[68]:
 
 # Additional Embedding & CLS samples
 
 # In[69]:
 
-# In[84]:
+# In[60]:
 
 
 subtask_ann = subtask + '-iob_code_suf'
@@ -945,7 +676,7 @@ subtask_ann = subtask + '-iob_code_suf'
 
 # In[70]:
 
-# In[85]:
+# In[61]:
 
 
 df_codes_train_ner_final = df_codes_train_ner_final.rename(columns={"doc_id": "clinical_case"})
@@ -953,7 +684,7 @@ df_codes_train_ner_final = df_codes_train_ner_final.rename(columns={"doc_id": "c
 
 # In[71]:
 
-# In[86]:
+# In[62]:
 
 
 train_cls_y, train_cls_ind, df_train_cls_ann = create_cls_emb_y_samples(
@@ -965,42 +696,12 @@ train_cls_y, train_cls_ind, df_train_cls_ann = create_cls_emb_y_samples(
 
 # In[72]:
 
-# In[87]:
+# In[63]:
 
 
 train_cls_code_pre_y = np.array([code_pre_lab_encoder[sample[0][-1][0]] for sample in train_cls_y])
 train_cls_code_suf_y = np.array([code_suf_lab_encoder[sample[0][-1][1] if sample[0][-1][1] is not None else "O"]                                  for sample in train_cls_y])
 train_cls_emb_y = np.array([sample[1] for sample in train_cls_y])
-
-
-# In[73]:
-
-# In[88]:
-
-
-df_codes_dev_ner_final = df_codes_dev_ner_final.rename(columns={"doc_id": "clinical_case"})
-
-
-# In[74]:
-
-# In[89]:
-
-
-dev_cls_y, dev_cls_ind, df_dev_cls_ann = create_cls_emb_y_samples(
-    df_ann=df_codes_dev_ner_final, doc_list=dev_doc_list, arr_frag=dev_frag,
-    arr_start_end=dev_start_end_frag, arr_word_id=dev_word_id, arr_ind=dev_ind,
-    seq_len=SEQ_LEN, empty_samples=EMPTY_SAMPLES, subtask=subtask_ann
-)
-
-
-# In[75]:
-
-# In[90]:
-
-
-dev_cls_code_pre_y = np.array([code_pre_lab_encoder[sample[0][-1][0]] for sample in dev_cls_y])
-dev_cls_code_suf_y = np.array([code_suf_lab_encoder[sample[0][-1][1] if sample[0][-1][1] is not None else "O"]                                for sample in dev_cls_y])
-dev_cls_emb_y = np.array([sample[1] for sample in dev_cls_y])
 
 
 # In[76]:
@@ -1009,7 +710,7 @@ dev_cls_emb_y = np.array([sample[1] for sample in dev_cls_y])
 
 # In[77]:
 
-# In[91]:
+# In[64]:
 
 
 def create_ind_emb_mention_sep(arr_ind, arr_emb, tokenizer=tokenizer,
@@ -1062,23 +763,12 @@ def create_ind_emb_mention_sep(arr_ind, arr_emb, tokenizer=tokenizer,
 
 # In[78]:
 
-# In[92]:
+# In[65]:
 
 
 train_cls_ind, train_cls_emb = create_ind_emb_mention_sep(
     arr_ind=train_cls_ind, 
     arr_emb=train_cls_emb_y
-)
-
-
-# In[79]:
-
-# In[93]:
-
-
-dev_cls_ind, dev_cls_emb = create_ind_emb_mention_sep(
-    arr_ind=dev_cls_ind, 
-    arr_emb=dev_cls_emb_y
 )
 
 
@@ -1088,7 +778,7 @@ dev_cls_ind, dev_cls_emb = create_ind_emb_mention_sep(
 
 # In[81]:
 
-# In[94]:
+# In[66]:
 
 
 def calculate_max_seq(list_list_arr_seq):
@@ -1103,15 +793,15 @@ def calculate_max_seq(list_list_arr_seq):
 
 # In[82]:
 
-# In[95]:
+# In[67]:
 
 
-print(calculate_max_seq([train_cls_ind, dev_cls_ind]))
+print(calculate_max_seq([train_cls_ind]))
 
 
 # In[83]:
 
-# In[96]:
+# In[68]:
 
 
 MAX_SEQ_LEN = 256
@@ -1119,7 +809,7 @@ MAX_SEQ_LEN = 256
 
 # In[84]:
 
-# In[97]:
+# In[69]:
 
 
 def pad_inidices_emb_create_att(list_ind_sep, list_emb_sep, 
@@ -1148,7 +838,7 @@ def pad_inidices_emb_create_att(list_ind_sep, list_emb_sep,
 
 # In[85]:
 
-# In[98]:
+# In[70]:
 
 
 train_cls_ind, train_cls_emb, train_cls_att = pad_inidices_emb_create_att(
@@ -1159,7 +849,7 @@ train_cls_ind, train_cls_emb, train_cls_att = pad_inidices_emb_create_att(
 
 # In[86]:
 
-# In[99]:
+# In[71]:
 
 
 print(train_cls_code_pre_y.shape, train_cls_code_suf_y.shape, 
@@ -1168,50 +858,9 @@ print(train_cls_code_pre_y.shape, train_cls_code_suf_y.shape,
 
 # In[87]:
 
-# In[100]:
-
-
-dev_cls_ind, dev_cls_emb, dev_cls_att = pad_inidices_emb_create_att(
-    list_ind_sep=dev_cls_ind,
-    list_emb_sep=dev_cls_emb
-)
-
-
-# In[88]:
-
-# In[101]:
-
-
-print(dev_cls_code_pre_y.shape, dev_cls_code_suf_y.shape, 
-      dev_cls_ind.shape, dev_cls_emb.shape, dev_cls_att.shape)
-
-
-# In[89]:
-
-# Train + Dev
-
-# In[102]:
-
-
-train_dev_cls_code_pre_y = np.concatenate((train_cls_code_pre_y, dev_cls_code_pre_y))
-train_dev_cls_code_suf_y = np.concatenate((train_cls_code_suf_y, dev_cls_code_suf_y))
-train_dev_cls_ind = np.concatenate((train_cls_ind, dev_cls_ind))
-train_dev_cls_emb = np.concatenate((train_cls_emb, dev_cls_emb))
-train_dev_cls_att = np.concatenate((train_cls_att, dev_cls_att))
-
-
-# In[90]:
-
-# In[103]:
-
-
-print(train_dev_cls_code_pre_y.shape, train_dev_cls_code_suf_y.shape, 
-      train_dev_cls_ind.shape, train_dev_cls_emb.shape, train_dev_cls_att.shape)
-
-
 # In[91]:
 
-# In[104]:
+# In[72]:
 
 
 def format_ner_preds(ner_file_name=df_iob_preds_name, ner_dir=RES_DIR, doc_list=test_doc_list, arr_frag=test_frag,
@@ -1247,32 +896,6 @@ def format_ner_preds(ner_file_name=df_iob_preds_name, ner_dir=RES_DIR, doc_list=
     return cls_ind_ner, cls_emb_ner, cls_att_ner, df_cls_ann_ner
 
 
-# In[92]:
-
-# In[105]:
-
-
-dev_cls_ind_ner, dev_cls_emb_ner, dev_cls_att_ner, df_dev_cls_ann_ner = format_ner_preds(
-    ner_file_name=df_iob_preds_name,
-    doc_list=dev_doc_list,
-    arr_frag=dev_frag,
-    arr_start_end=dev_start_end_frag,
-    arr_word_id=dev_word_id,
-    arr_ind=dev_ind,
-    prefix_name="df_dev_preds_"
-)
-
-
-# In[93]:
-
-# In[106]:
-
-
-test_cls_ind_ner, test_cls_emb_ner, test_cls_att_ner, df_test_cls_ann_ner = format_ner_preds(
-    ner_file_name=df_iob_preds_name
-)
-
-
 # ## Fine-tuning<br>
 # <br>
 # Using the corpus of labeled sentences, we fine-tune the model on a multi-label sentence classification task.
@@ -1283,7 +906,7 @@ test_cls_ind_ner, test_cls_emb_ner, test_cls_att_ner, df_test_cls_ann_ner = form
 
 # In[95]:
 
-# In[107]:
+# In[73]:
 
 
 physical_devices = tf.config.list_physical_devices('GPU')
@@ -1292,7 +915,7 @@ print(physical_devices)
 
 # In[96]:
 
-# In[108]:
+# In[74]:
 
 
 for gpu_instance in physical_devices: 
@@ -1301,7 +924,7 @@ for gpu_instance in physical_devices:
 
 # In[97]:
 
-# In[110]:
+# In[75]:
 
 
 if model_name.split('_')[0] in ('beto', 'mbert'):
@@ -1315,7 +938,7 @@ else: # default
 
 # In[98]:
 
-# In[112]:
+# In[76]:
 
 
 from tensorflow.keras import Input, Model
@@ -1323,14 +946,14 @@ from tensorflow.keras.layers import Dense, Activation
 from tensorflow.keras.initializers import GlorotUniform
 
 
-# In[113]:
+# In[77]:
 
 
 code_pre_num_labels = len(code_pre_lab_encoder) - 1 if not EMPTY_SAMPLES else len(code_pre_lab_encoder)
 code_suf_num_labels = len(code_suf_lab_encoder) # Some code-suf can be "O"
 
 
-# In[114]:
+# In[78]:
 
 
 input_ids = Input(shape=(MAX_SEQ_LEN,), name='input_ids', dtype='int64')
@@ -1338,7 +961,7 @@ attention_mask = Input(shape=(MAX_SEQ_LEN,), name='attention_mask', dtype='int64
 ner_ann_ids = Input(shape=(MAX_SEQ_LEN,), name='ner_ann_ids', dtype='int64')
 
 
-# In[115]:
+# In[79]:
 
 
 out_cls = model.layers[0](input_ids=input_ids, 
@@ -1348,7 +971,7 @@ out_cls = model.layers[0](input_ids=input_ids,
 
 # Code-pre
 
-# In[116]:
+# In[80]:
 
 
 out_cls_code_pre = Dense(units=code_pre_num_labels, kernel_initializer=GlorotUniform(seed=random_seed))(out_cls) # Multi-class classification 
@@ -1357,14 +980,14 @@ out_cls_code_pre_model = Activation(activation='softmax', name='code_pre_cls_out
 
 # Code-suf
 
-# In[117]:
+# In[81]:
 
 
 out_cls_code_suf = Dense(units=code_suf_num_labels, kernel_initializer=GlorotUniform(seed=random_seed))(out_cls) # Multi-class classification 
 out_cls_code_suf_model = Activation(activation='softmax', name='code_suf_cls_output')(out_cls_code_suf)
 
 
-# In[118]:
+# In[82]:
 
 
 model = Model(inputs=[input_ids, attention_mask, ner_ann_ids], outputs=[out_cls_code_pre_model, out_cls_code_suf_model])
@@ -1372,7 +995,7 @@ model = Model(inputs=[input_ids, attention_mask, ner_ann_ids], outputs=[out_cls_
 
 # In[99]:
 
-# In[119]:
+# In[83]:
 
 
 print(model.summary())
@@ -1380,7 +1003,7 @@ print(model.summary())
 
 # In[100]:
 
-# In[120]:
+# In[84]:
 
 
 print(model.input)
@@ -1388,7 +1011,7 @@ print(model.input)
 
 # In[101]:
 
-# In[121]:
+# In[85]:
 
 
 print(model.output)
@@ -1398,16 +1021,14 @@ print(model.output)
 
 # GS data
 
-# In[139]:
+# In[86]:
 
 
-df_dev_gs = format_codiesp_x_gs(dev_gs_path)
-df_dev_gs = df_dev_gs[df_dev_gs['label_gs'] == TYPE_ANN]
 df_test_gs = format_codiesp_x_gs(test_gs_path)
 df_test_gs = df_test_gs[df_test_gs['label_gs'] == TYPE_ANN]
 
 
-# In[140]:
+# In[87]:
 
 
 valid_codes_D = set(pd.read_csv(codes_d_path, sep='\t', header=None, 
@@ -1417,7 +1038,7 @@ valid_codes_D = set([x.lower() for x in valid_codes_D])
 
 # In[104]:
 
-# In[124]:
+# In[88]:
 
 
 import tensorflow_addons as tfa
@@ -1425,7 +1046,7 @@ from tensorflow.keras import losses
 import time
 
 
-# In[125]:
+# In[89]:
 
 
 optimizer = tfa.optimizers.RectifiedAdam(learning_rate=LR)
@@ -1444,11 +1065,11 @@ start_time = time.time()
 # In[ ]:
 
 
-history = model.fit(x={'input_ids': train_dev_cls_ind, 
-                       'attention_mask': train_dev_cls_att,
-                       'ner_ann_ids': train_dev_cls_emb}, 
-                    y={'code_pre_cls_output': train_dev_cls_code_pre_y, 
-                       'code_suf_cls_output': train_dev_cls_code_suf_y}, 
+history = model.fit(x={'input_ids': train_cls_ind, 
+                       'attention_mask': train_cls_att,
+                       'ner_ann_ids': train_cls_emb}, 
+                    y={'code_pre_cls_output': train_cls_code_pre_y, 
+                       'code_suf_cls_output': train_cls_code_suf_y}, 
                     batch_size=BATCH_SIZE, epochs=EPOCHS, shuffle=True, 
                     verbose=2)
 
@@ -1463,9 +1084,41 @@ print()
 
 # ## Evaluation
 
-# ### Development
+# #### Full
 
-# In[105]:
+# In[91]:
+
+
+df_test_gs_full = df_test_gs.sort_values(by=["clinical_case", "start_pos_gs", "end_pos_gs"])
+
+
+# In[92]:
+
+
+df_test_gs_full_ner = df_test_gs_full[["clinical_case", "start_pos_gs", "end_pos_gs", "pos_gs"]].rename( 
+    columns={"start_pos_gs": "start", "end_pos_gs": "end", "pos_gs": "location"}
+)
+
+
+# In[ ]:
+
+
+# Generate input data
+
+
+# In[93]:
+
+
+test_full_cls_ind_ner, test_full_cls_emb_ner, test_full_cls_att_ner, df_test_full_cls_ann_ner = format_ner_preds(
+    df_preds_ner=df_test_gs_full_ner
+)
+
+
+# In[ ]:
+
+
+# Predictions
+
 
 # In[ ]:
 
@@ -1473,23 +1126,39 @@ print()
 start_time = time.time()
 
 
-# In[106]:
+# In[87]:
 
-# In[127]:
-
-
-y_pred_dev_cls = model.predict({'input_ids': dev_cls_ind_ner, 
-                                'attention_mask': dev_cls_att_ner,
-                                'ner_ann_ids': dev_cls_emb_ner})
+# In[94]:
 
 
-# In[107]:
+y_pred_test_full_cls = model.predict({'input_ids': test_full_cls_ind_ner, 
+                                 'attention_mask': test_full_cls_att_ner,
+                                'ner_ann_ids': test_full_cls_emb_ner})
 
-# In[128]:
+
+# In[88]:
+
+# In[ ]:
 
 
-df_dev_preds = cls_code_norm_preds_brat_format(
-    y_pred_cls=y_pred_dev_cls, df_pred_ner=df_dev_cls_ann_ner, 
+np.save(file="test_full_preds_code_pre_" + JOB_NAME + ".npy", arr=y_pred_test_full_cls[0])
+
+
+# In[89]:
+
+# In[ ]:
+
+
+np.save(file="test_full_preds_code_suf_" + JOB_NAME + ".npy", arr=y_pred_test_full_cls[1])
+
+
+# In[90]:
+
+# In[95]:
+
+
+df_test_full_preds = cls_code_norm_preds_brat_format(
+    y_pred_cls=y_pred_test_full_cls, df_pred_ner=df_test_full_cls_ann_ner, 
     code_decoder_list=[code_pre_lab_decoder, code_suf_lab_decoder],
     subtask=subtask_ann,
     code_sep=CODE_SEP,
@@ -1498,399 +1167,186 @@ df_dev_preds = cls_code_norm_preds_brat_format(
 )
 
 
-# In[108]:
+# Adapt to CodiEsp format
+
+# In[96]:
+
+
+df_test_full_preds['label_pred'] = TYPE_ANN
+df_test_full_preds['pos_pred'] = [str(row['start']) + ' ' + str(row['end']) for index, row in df_test_full_preds.iterrows()]
+df_test_full_preds = df_test_full_preds.rename(columns={'code_pred': 'code'})
+df_test_full_preds = df_test_full_preds[['clinical_case', 'pos_pred', 'label_pred', 'code']]
+
+
+# In[117]:
+
+# In[97]:
+
+
+code_pred_full = [df_test_full_preds["code"].loc[i] if i in df_test_full_preds.index else "-" for i in df_test_gs_full.index] 
+
+
+# In[98]:
+
+
+assert len(code_pred_full) == df_test_gs_full.shape[0]
+
+
+# In[ ]:
+
+
+print(round(
+    (
+        pd.Series(df_test_gs_full["code"].values) == pd.Series(code_pred_full)
+    ).value_counts(normalize=True)[True], 
+    4
+))
+
+
+# In[92]:
+
+# In[ ]:
+
+
+end_time = time.time()
+print("--- Full test evaluation: %s seconds ---" % (end_time - start_time))
+print()
+
+
+# In[93]:
+
+# Save final results DF
+
+# In[ ]:
+
+
+df_test_full_preds.to_csv("df_test_full_preds_" + JOB_NAME + ".csv", index=True, header=True, sep = '\t')
+
+
+# #### Filtering
+
+# In[100]:
+
+
+df_codes_train_ner_all = pd.read_table(corpus_path + "train/trainX.tsv", sep='\t', header=None)
+df_codes_train_ner_all.columns = ["doc_id", "type", "code", "word", "location"]
+df_codes_train_ner_all = df_codes_train_ner_all[df_codes_train_ner_all['type'] == TYPE_ANN]
+
+
+# In[101]:
+
+
+train_dev_mentions = sorted(set([x.lower() for x in set(
+    df_codes_train_ner_all["word"].values
+)]))
+
+
+# In[102]:
+
+
+df_test_gs_filt = df_test_gs[df_test_gs.ref.apply(
+    lambda x: x.lower() not in train_dev_mentions
+)].sort_values(by=["clinical_case", "start_pos_gs", "end_pos_gs"])
+
+
+# In[103]:
+
+
+df_test_gs_filt_ner = df_test_gs_filt[["clinical_case", "start_pos_gs", "end_pos_gs", "pos_gs"]].rename( 
+    columns={"start_pos_gs": "start", "end_pos_gs": "end", "pos_gs": "location"}
+)
+
+
+# In[ ]:
+
+
+# Generate input data
+
+
+# In[104]:
+
+
+test_filt_cls_ind_ner, test_filt_cls_emb_ner, test_filt_cls_att_ner, df_test_filt_cls_ann_ner = format_ner_preds(
+    df_preds_ner=df_test_gs_filt_ner
+)
+
+
+# In[ ]:
+
+
+# Predictions
+
+
+# In[ ]:
+
+
+start_time = time.time()
+
+
+# In[87]:
+
+# In[105]:
+
+
+y_pred_test_filt_cls = model.predict({'input_ids': test_filt_cls_ind_ner, 
+                                 'attention_mask': test_filt_cls_att_ner,
+                                'ner_ann_ids': test_filt_cls_emb_ner})
+
+
+# In[88]:
+
+# In[ ]:
+
+
+np.save(file="test_filt_preds_code_pre_" + JOB_NAME + ".npy", arr=y_pred_test_filt_cls[0])
+
+
+# In[89]:
+
+# In[ ]:
+
+
+np.save(file="test_filt_preds_code_suf_" + JOB_NAME + ".npy", arr=y_pred_test_filt_cls[1])
+
+
+# In[90]:
+
+# In[106]:
+
+
+df_test_filt_preds = cls_code_norm_preds_brat_format(
+    y_pred_cls=y_pred_test_filt_cls, df_pred_ner=df_test_filt_cls_ann_ner, 
+    code_decoder_list=[code_pre_lab_decoder, code_suf_lab_decoder],
+    subtask=subtask_ann,
+    code_sep=CODE_SEP,
+    codes_pre_o_mask=None,
+    codes_pre_suf_mask=None
+)
+
 
 # Adapt to CodiEsp format
 
-# In[129]:
+# In[107]:
 
 
-df_dev_preds['label_pred'] = TYPE_ANN
-df_dev_preds['pos_pred'] = [str(row['start']) + ' ' + str(row['end']) for index, row in df_dev_preds.iterrows()]
-df_dev_preds = df_dev_preds.rename(columns={'code_pred': 'code'})
-df_dev_preds = df_dev_preds[['clinical_case', 'pos_pred', 'label_pred', 'code']]
+df_test_filt_preds['label_pred'] = TYPE_ANN
+df_test_filt_preds['pos_pred'] = [str(row['start']) + ' ' + str(row['end']) for index, row in df_test_filt_preds.iterrows()]
+df_test_filt_preds = df_test_filt_preds.rename(columns={'code_pred': 'code'})
+df_test_filt_preds = df_test_filt_preds[['clinical_case', 'pos_pred', 'label_pred', 'code']]
+
+
+# In[117]:
+
+# In[108]:
+
+
+code_pred_filt = [df_test_filt_preds["code"].loc[i] if i in df_test_filt_preds.index else "-" for i in df_test_gs_filt.index] 
 
 
 # In[109]:
 
-# In[ ]:
 
-
-print(calculate_codiesp_x_metrics(df_gs=df_dev_gs, 
-                            df_pred=format_codiesp_x_pred_df(df_run=df_dev_preds,
-                                                             valid_codes=valid_codes_D)))
-
-
-# In[110]:
-
-# In[ ]:
-
-
-end_time = time.time()
-print("--- Dev evaluation: %s seconds ---" % (end_time - start_time))
-print()
-
-
-# ### Test
-
-# In[111]:
-
-# In[ ]:
-
-
-start_time = time.time()
-
-
-# In[112]:
-
-# In[131]:
-
-
-y_pred_test_cls = model.predict({'input_ids': test_cls_ind_ner, 
-                                 'attention_mask': test_cls_att_ner,
-                                'ner_ann_ids': test_cls_emb_ner})
-
-
-# In[113]:
-
-# In[ ]:
-
-
-np.save(file="test_preds_code_pre_" + JOB_NAME + ".npy", arr=y_pred_test_cls[0])
-
-
-# In[114]:
-
-# In[ ]:
-
-
-np.save(file="test_preds_code_suf_" + JOB_NAME + ".npy", arr=y_pred_test_cls[1])
-
-
-# In[115]:
-
-# In[132]:
-
-
-df_test_preds = cls_code_norm_preds_brat_format(
-    y_pred_cls=y_pred_test_cls, df_pred_ner=df_test_cls_ann_ner, 
-    code_decoder_list=[code_pre_lab_decoder, code_suf_lab_decoder],
-    subtask=subtask_ann,
-    code_sep=CODE_SEP,
-    codes_pre_o_mask=None,
-    codes_pre_suf_mask=None
-)
-
-
-# In[116]:
-
-# Adapt to CodiEsp format
-
-# In[133]:
-
-
-df_test_preds['label_pred'] = TYPE_ANN
-df_test_preds['pos_pred'] = [str(row['start']) + ' ' + str(row['end']) for index, row in df_test_preds.iterrows()]
-df_test_preds = df_test_preds.rename(columns={'code_pred': 'code'})
-df_test_preds = df_test_preds[['clinical_case', 'pos_pred', 'label_pred', 'code']]
-
-
-# In[117]:
-
-# In[ ]:
-
-
-print(calculate_codiesp_x_metrics(df_gs=df_test_gs, 
-                            df_pred=format_codiesp_x_pred_df(df_run=df_test_preds,
-                                                             valid_codes=valid_codes_D)))
-
-
-# In[118]:
-
-# In[ ]:
-
-
-end_time = time.time()
-print("--- Test evaluation: %s seconds ---" % (end_time - start_time))
-print()
-
-
-# In[119]:
-
-# Save final results DF
-
-# In[ ]:
-
-
-df_test_preds.to_csv("df_test_preds_" + JOB_NAME + ".csv", index=False, header=True, sep = '\t')
-
-
-# ### Additional predictions
-
-# #### Ensemble
-
-# In[120]:
-
-# In[ ]:
-
-
-for ens_name in ens_model_name_arr:
-    test_cls_ind_ner, test_cls_emb_ner, test_cls_att_ner, df_test_cls_ann_ner = format_ner_preds(
-        ner_file_name=df_iob_preds_name_ens + ens_name,
-        ner_dir=RES_DIR_ENS
-    )
-    start_time = time.time()
-    y_pred_test_cls = model.predict({'input_ids': test_cls_ind_ner, 
-                                 'attention_mask': test_cls_att_ner,
-                                'ner_ann_ids': test_cls_emb_ner})
-    np.save(file="test_preds_code_pre_ens_ner_" + ens_name + "_" + JOB_NAME + ".npy", arr=y_pred_test_cls[0])
-    np.save(file="test_preds_code_suf_ens_ner_" + ens_name + "_" + JOB_NAME + ".npy", arr=y_pred_test_cls[1])
-    df_test_preds = cls_code_norm_preds_brat_format(
-        y_pred_cls=y_pred_test_cls, df_pred_ner=df_test_cls_ann_ner, 
-        code_decoder_list=[code_pre_lab_decoder, code_suf_lab_decoder],
-        subtask=subtask_ann,
-        code_sep=CODE_SEP,
-        codes_pre_o_mask=None,
-        codes_pre_suf_mask=None
-    )
-    # Adapt to CodiEsp format
-    df_test_preds['label_pred'] = TYPE_ANN
-    df_test_preds['pos_pred'] = [str(row['start']) + ' ' + str(row['end']) for index, row in df_test_preds.iterrows()]
-    df_test_preds = df_test_preds.rename(columns={'code_pred': 'code'})
-    df_test_preds = df_test_preds[['clinical_case', 'pos_pred', 'label_pred', 'code']]
-    print(calculate_codiesp_x_metrics(df_gs=df_test_gs, 
-                                      df_pred=format_codiesp_x_pred_df(df_run=df_test_preds,
-                                                                       valid_codes=valid_codes_D)))
-    end_time = time.time()
-    print("--- Ensemble NER " + ens_name + " evaluation: %s seconds ---" % (end_time - start_time))
-    print()
-    # Save final results DF
-    df_test_preds.to_csv("df_test_preds_ens_ner_" + ens_name + "_" + JOB_NAME + ".csv", index=False, header=True, sep = '\t')
-
-
-# #### Multi-task NER
-
-# In[135]:
-
-# In[ ]:
-
-
-test_cls_ind_ner, test_cls_emb_ner, test_cls_att_ner, df_test_cls_ann_ner = format_ner_preds(
-    ner_file_name=df_iob_preds_name_multi 
-)
-
-
-# In[136]:
-
-# In[ ]:
-
-
-start_time = time.time()
-
-
-# In[137]:
-
-# In[ ]:
-
-
-y_pred_test_cls = model.predict({'input_ids': test_cls_ind_ner, 
-                                 'attention_mask': test_cls_att_ner,
-                                'ner_ann_ids': test_cls_emb_ner})
-
-
-# In[138]:
-
-# In[ ]:
-
-
-np.save(file="test_preds_code_pre_multi_task_ner_" + str(multi_iob_exec) + "_" + JOB_NAME + ".npy", arr=y_pred_test_cls[0])
-
-
-# In[139]:
-
-# In[ ]:
-
-
-np.save(file="test_preds_code_suf_multi_task_ner_" + str(multi_iob_exec) + "_" + JOB_NAME + ".npy", arr=y_pred_test_cls[1])
-
-
-# In[140]:
-
-# In[ ]:
-
-
-df_test_preds = cls_code_norm_preds_brat_format(
-    y_pred_cls=y_pred_test_cls, df_pred_ner=df_test_cls_ann_ner, 
-    code_decoder_list=[code_pre_lab_decoder, code_suf_lab_decoder],
-    subtask=subtask_ann,
-    code_sep=CODE_SEP,
-    codes_pre_o_mask=None,
-    codes_pre_suf_mask=None
-)
-
-
-# In[141]:
-
-# Adapt to CodiEsp format
-
-# In[ ]:
-
-
-df_test_preds['label_pred'] = TYPE_ANN
-df_test_preds['pos_pred'] = [str(row['start']) + ' ' + str(row['end']) for index, row in df_test_preds.iterrows()]
-df_test_preds = df_test_preds.rename(columns={'code_pred': 'code'})
-df_test_preds = df_test_preds[['clinical_case', 'pos_pred', 'label_pred', 'code']]
-
-
-# In[142]:
-
-# In[ ]:
-
-
-print(calculate_codiesp_x_metrics(df_gs=df_test_gs, 
-                            df_pred=format_codiesp_x_pred_df(df_run=df_test_preds,
-                                                             valid_codes=valid_codes_D)))
-
-
-# In[143]:
-
-# In[ ]:
-
-
-end_time = time.time()
-print("--- Multi-task NER evaluation: %s seconds ---" % (end_time - start_time))
-
-
-# In[144]:
-
-# Save final results DF
-
-# In[ ]:
-
-
-df_test_preds.to_csv("df_test_preds_multi_task_ner_" + str(multi_iob_exec) + "_" + JOB_NAME + ".csv", index=False, header=True, sep = '\t')
-
-
-# #### Zero-shot
-
-# In[143]:
-
-
-test_codes = sorted(set(df_test_gs["code"]))
-
-
-# In[145]:
-
-
-zero_test_codes = set(test_codes) - set(train_dev_codes)
-
-
-# In[147]:
-
-
-df_test_gs_zero = df_test_gs[df_test_gs.code.apply(
-    lambda x: x in zero_test_codes
-)].sort_values(by=["clinical_case", "pos_gs"])
-
-
-# In[149]:
-
-
-df_test_gs_zero_ner = df_test_gs_zero[["clinical_case", "start_pos_gs", "end_pos_gs", "pos_gs"]].rename( 
-    columns={"start_pos_gs": "start", "end_pos_gs": "end", "pos_gs": "location"}
-)
-
-
-# In[ ]:
-
-
-# Generate input data
-
-
-# In[150]:
-
-
-test_zero_cls_ind_ner, test_zero_cls_emb_ner, test_zero_cls_att_ner, df_test_zero_cls_ann_ner = format_ner_preds(
-    df_preds_ner=df_test_gs_zero_ner
-)
-
-
-# In[ ]:
-
-
-# Predictions
-
-
-# In[ ]:
-
-
-start_time = time.time()
-
-
-# In[87]:
-
-# In[151]:
-
-
-y_pred_test_zero_cls = model.predict({'input_ids': test_zero_cls_ind_ner, 
-                                 'attention_mask': test_zero_cls_att_ner,
-                                'ner_ann_ids': test_zero_cls_emb_ner})
-
-
-# In[88]:
-
-# In[ ]:
-
-
-np.save(file="test_zero_preds_code_pre_" + JOB_NAME + ".npy", arr=y_pred_test_zero_cls[0])
-
-
-# In[89]:
-
-# In[ ]:
-
-
-np.save(file="test_zero_preds_code_suf_" + JOB_NAME + ".npy", arr=y_pred_test_zero_cls[1])
-
-
-# In[90]:
-
-# In[152]:
-
-
-df_test_zero_preds = cls_code_norm_preds_brat_format(
-    y_pred_cls=y_pred_test_zero_cls, df_pred_ner=df_test_zero_cls_ann_ner, 
-    code_decoder_list=[code_pre_lab_decoder, code_suf_lab_decoder],
-    subtask=subtask_ann,
-    code_sep=CODE_SEP,
-    codes_pre_o_mask=None,
-    codes_pre_suf_mask=None
-)
-
-
-# Adapt to CodiEsp format
-
-# In[153]:
-
-
-df_test_zero_preds['label_pred'] = TYPE_ANN
-df_test_zero_preds['pos_pred'] = [str(row['start']) + ' ' + str(row['end']) for index, row in df_test_zero_preds.iterrows()]
-df_test_zero_preds = df_test_zero_preds.rename(columns={'code_pred': 'code'})
-df_test_zero_preds = df_test_zero_preds[['clinical_case', 'pos_pred', 'label_pred', 'code']]
-
-
-# In[117]:
-
-# In[154]:
-
-
-code_pred_zero = [df_test_zero_preds["code"].loc[i] if i in df_test_zero_preds.index else "-" for i in df_test_gs_zero.index] 
-
-
-# In[155]:
-
-
-assert len(code_pred_zero) == df_test_gs_zero.shape[0]
+assert len(code_pred_filt) == df_test_gs_filt.shape[0]
 
 
 # In[ ]:
@@ -1898,7 +1354,7 @@ assert len(code_pred_zero) == df_test_gs_zero.shape[0]
 
 print(round(
     (
-        pd.Series(df_test_gs_zero["code"].values) == pd.Series(code_pred_zero)
+        pd.Series(df_test_gs_filt["code"].values) == pd.Series(code_pred_filt)
     ).value_counts(normalize=True)[True], 
     4
 ))
@@ -1910,7 +1366,7 @@ print(round(
 
 
 end_time = time.time()
-print("--- Zero-shot test evaluation: %s seconds ---" % (end_time - start_time))
+print("--- Filtering test evaluation: %s seconds ---" % (end_time - start_time))
 print()
 
 
@@ -1921,169 +1377,5 @@ print()
 # In[ ]:
 
 
-df_test_zero_preds.to_csv("df_test_zero_preds_" + JOB_NAME + ".csv", index=True, header=True, sep = '\t')
-
-
-# #### Few-shots
-
-# In[157]:
-
-
-dist_train_dev_codes = pd.concat((
-    df_codes_train_ner_final.code, 
-    df_codes_dev_ner_final.code
-)).value_counts()
-
-
-# In[158]:
-
-
-few_train_dev_codes = sorted(set(
-    dist_train_dev_codes[dist_train_dev_codes <= 5].index.values
-))
-
-
-# In[160]:
-
-
-few_codes = set(few_train_dev_codes).union(set(zero_test_codes))
-
-
-# In[163]:
-
-
-df_test_gs_few = df_test_gs[df_test_gs.code.apply(
-    lambda x: x in few_codes
-)].sort_values(by=["clinical_case", "pos_gs"])
-
-
-# In[165]:
-
-
-df_test_gs_few_ner = df_test_gs_few[["clinical_case", "start_pos_gs", "end_pos_gs", "pos_gs"]].rename( 
-    columns={"start_pos_gs": "start", "end_pos_gs": "end", "pos_gs": "location"}
-)
-
-
-# In[ ]:
-
-
-# Generate input data
-
-
-# In[166]:
-
-
-test_few_cls_ind_ner, test_few_cls_emb_ner, test_few_cls_att_ner, df_test_few_cls_ann_ner = format_ner_preds(
-    df_preds_ner=df_test_gs_few_ner
-)
-
-
-# In[ ]:
-
-
-# Predictions
-
-
-# In[ ]:
-
-
-start_time = time.time()
-
-
-# In[87]:
-
-# In[167]:
-
-
-y_pred_test_few_cls = model.predict({'input_ids': test_few_cls_ind_ner, 
-                                 'attention_mask': test_few_cls_att_ner,
-                                'ner_ann_ids': test_few_cls_emb_ner})
-
-
-# In[88]:
-
-# In[ ]:
-
-
-np.save(file="test_few_preds_code_pre_" + JOB_NAME + ".npy", arr=y_pred_test_few_cls[0])
-
-
-# In[89]:
-
-# In[ ]:
-
-
-np.save(file="test_few_preds_code_suf_" + JOB_NAME + ".npy", arr=y_pred_test_few_cls[1])
-
-
-# In[90]:
-
-# In[168]:
-
-
-df_test_few_preds = cls_code_norm_preds_brat_format(
-    y_pred_cls=y_pred_test_few_cls, df_pred_ner=df_test_few_cls_ann_ner, 
-    code_decoder_list=[code_pre_lab_decoder, code_suf_lab_decoder],
-    subtask=subtask_ann,
-    code_sep=CODE_SEP,
-    codes_pre_o_mask=None,
-    codes_pre_suf_mask=None
-)
-
-
-# Adapt to CodiEsp format
-
-# In[169]:
-
-
-df_test_few_preds['label_pred'] = TYPE_ANN
-df_test_few_preds['pos_pred'] = [str(row['start']) + ' ' + str(row['end']) for index, row in df_test_few_preds.iterrows()]
-df_test_few_preds = df_test_few_preds.rename(columns={'code_pred': 'code'})
-df_test_few_preds = df_test_few_preds[['clinical_case', 'pos_pred', 'label_pred', 'code']]
-
-
-# In[117]:
-
-# In[170]:
-
-
-code_pred_few = [df_test_few_preds["code"].loc[i] if i in df_test_few_preds.index else "-" for i in df_test_gs_few.index] 
-
-
-# In[171]:
-
-
-assert len(code_pred_few) == df_test_gs_few.shape[0]
-
-
-# In[172]:
-
-
-print(round(
-    (
-        pd.Series(df_test_gs_few["code"].values) == pd.Series(code_pred_few)
-    ).value_counts(normalize=True)[True], 
-    4
-))
-
-
-# In[92]:
-
-# In[ ]:
-
-
-end_time = time.time()
-print("--- Few-shots test evaluation: %s seconds ---" % (end_time - start_time))
-print()
-
-
-# In[93]:
-
-# Save final results DF
-
-# In[ ]:
-
-
-df_test_few_preds.to_csv("df_test_few_preds_" + JOB_NAME + ".csv", index=True, header=True, sep = '\t')
+df_test_filt_preds.to_csv("df_test_filt_preds_" + JOB_NAME + ".csv", index=True, header=True, sep = '\t')
 

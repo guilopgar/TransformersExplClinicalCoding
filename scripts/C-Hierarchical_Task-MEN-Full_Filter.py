@@ -36,13 +36,13 @@ random_exec = 1
 
 import sys
 if len(sys.argv) > 1:
-    model_name = sys.argv[-4]
-    epochs = int(sys.argv[-3])
-    random_seed = int(sys.argv[-2])
-    random_exec = int(sys.argv[-1])
+    model_name = sys.argv[-5]
+    epochs = int(sys.argv[-4])
+    random_seed = int(sys.argv[-3])
+    random_exec = int(sys.argv[-2])
 
 
-# In[4]:
+# In[3]:
 
 
 hier_iob_exec = random_exec
@@ -55,7 +55,7 @@ print("Model name:", model_name,
 
 # In[ ]:
 
-# In[5]:
+# In[4]:
 
 
 root_path = "../"
@@ -63,7 +63,7 @@ root_path = "../"
 
 # In[ ]:
 
-# In[6]:
+# In[5]:
 
 
 from transformers import BertTokenizerFast, XLMRobertaTokenizerFast
@@ -71,7 +71,7 @@ from transformers import BertTokenizerFast, XLMRobertaTokenizerFast
 
 # All variables that depend on model_name
 
-# In[7]:
+# In[6]:
 
 
 if model_name == 'beto':
@@ -119,7 +119,7 @@ else: # default
 
 # In[1]:
 
-# In[8]:
+# In[7]:
 
 
 utils_path = root_path + "utils/"
@@ -132,7 +132,7 @@ test_gs_path = corpus_path + "test-set/" + sub_task_path
 
 # In[2]:
 
-# In[9]:
+# In[8]:
 
 
 import tensorflow as tf
@@ -140,14 +140,14 @@ import tensorflow as tf
 
 # Auxiliary components
 
-# In[10]:
+# In[9]:
 
 
 sys.path.insert(0, utils_path)
 from nlp_utils import *
 
 
-# In[11]:
+# In[10]:
 
 
 print(sys.path)
@@ -155,13 +155,13 @@ print(sys.path)
 
 # Hyper-parameters
 
-# In[12]:
+# In[11]:
 
 
 type_tokenizer = "transformers"
 
 
-# In[13]:
+# In[12]:
 
 
 subtask = 'norm'
@@ -173,7 +173,7 @@ EPOCHS = epochs
 LR = 3e-5
 
 
-# In[14]:
+# In[13]:
 
 
 GREEDY = True
@@ -183,19 +183,19 @@ ANN_STRATEGY = "word-all"
 LOGITS = False
 
 
-# In[15]:
+# In[14]:
 
 
 MENTION_LIMIT_EMB_VALUE = 1
 
 
-# In[16]:
+# In[15]:
 
 
 tf.random.set_seed(random_seed)
 
 
-# In[17]:
+# In[16]:
 
 
 RES_DIR = root_path + "results/Cantemist/final_exec/"
@@ -211,28 +211,8 @@ EMPTY_SAMPLES = False
 # In[19]:
 
 
-JOB_NAME = "c_hier_task_cls_" + model_name + "_" + str(random_exec)
+JOB_NAME = "c_hier_task_cls_train_" + model_name + "_" + str(random_exec)
 print("\n" + JOB_NAME)
-
-
-#  Additional predictions<br>
-# Ensemble
-
-# In[20]:
-
-
-RES_DIR_ENS = RES_DIR + "ensemble/"
-ens_model_name_arr = [model_name] + ens_multi_model_name
-df_iob_preds_name_ens = "c_hier_task_iob_"
-
-
-# Multi-task
-
-# In[21]:
-
-
-multi_iob_exec = random_exec
-df_iob_preds_name_multi = "ner_c_multi_task_" + model_name + "_" + str(multi_iob_exec)
 
 
 # ## Load text<br>
@@ -245,37 +225,21 @@ df_iob_preds_name_multi = "ner_c_multi_task_" + model_name + "_" + str(multi_iob
 
 # In[3]:
 
-# In[22]:
+# In[20]:
 
 
 train_path = corpus_path + "train-set/" + sub_task_path
 train_files = [f for f in os.listdir(train_path) if os.path.isfile(train_path + f) and f.split('.')[-1] == "txt"]
 n_train_files = len(train_files)
 train_data = load_text_files(train_files, train_path)
-dev1_path = corpus_path + "dev-set1/" + sub_task_path
-train_files.extend([f for f in os.listdir(dev1_path) if os.path.isfile(dev1_path + f) and f.split('.')[-1] == "txt"])
-train_data.extend(load_text_files(train_files[n_train_files:], dev1_path))
 df_text_train = pd.DataFrame({'doc_id': [s.split('.txt')[0] for s in train_files], 'raw_text': train_data})
-
-
-# ### Development corpus
-
-# In[4]:
-
-# In[23]:
-
-
-dev_path = corpus_path + "dev-set2/" + sub_task_path
-dev_files = [f for f in os.listdir(dev_path) if os.path.isfile(dev_path + f) and f.split('.')[-1] == "txt"]
-dev_data = load_text_files(dev_files, dev_path)
-df_text_dev = pd.DataFrame({'doc_id': [s.split('.txt')[0] for s in dev_files], 'raw_text': dev_data})
 
 
 # ### Test corpus
 
 # In[5]:
 
-# In[24]:
+# In[21]:
 
 
 test_path = corpus_path + "test-set/" + sub_task_path
@@ -292,16 +256,15 @@ df_text_test = pd.DataFrame({'doc_id': [s.split('.txt')[0] for s in test_files],
 
 # In[6]:
 
-# In[25]:
+# In[22]:
 
 
 train_ann_files = [train_path + f for f in os.listdir(train_path) if f.split('.')[-1] == "ann"]
-train_ann_files.extend([dev1_path + f for f in os.listdir(dev1_path) if f.split('.')[-1] == "ann"])
 
 
 # In[7]:
 
-# In[26]:
+# In[23]:
 
 
 df_codes_train_ner = process_brat_norm(train_ann_files).sort_values(["doc_id", "start", "end"])
@@ -309,7 +272,7 @@ df_codes_train_ner = process_brat_norm(train_ann_files).sort_values(["doc_id", "
 
 # In[8]:
 
-# In[27]:
+# In[24]:
 
 
 df_codes_train_ner["code_pre"] = df_codes_train_ner["code"].apply(lambda x: x.split('/')[0])
@@ -318,7 +281,7 @@ df_codes_train_ner["code_suf"] = df_codes_train_ner["code"].apply(lambda x: '/'.
 
 # In[9]:
 
-# In[28]:
+# In[25]:
 
 
 assert ~df_codes_train_ner[["doc_id", "start", "end"]].duplicated().any()
@@ -326,7 +289,7 @@ assert ~df_codes_train_ner[["doc_id", "start", "end"]].duplicated().any()
 
 # In[10]:
 
-# In[29]:
+# In[26]:
 
 
 df_codes_train_ner_final = df_codes_train_ner.copy()
@@ -334,61 +297,10 @@ df_codes_train_ner_final = df_codes_train_ner.copy()
 
 # In[11]:
 
-# In[30]:
+# In[27]:
 
 
 print(df_codes_train_ner_final.shape[0])
-
-
-# ### Development corpus
-
-# In[12]:
-
-# In[31]:
-
-
-dev_ann_files = [dev_path + f for f in os.listdir(dev_path) if f.split('.')[-1] == "ann"]
-
-
-# In[13]:
-
-# In[32]:
-
-
-df_codes_dev_ner = process_brat_norm(dev_ann_files).sort_values(["doc_id", "start", "end"])
-
-
-# In[14]:
-
-# In[33]:
-
-
-df_codes_dev_ner["code_pre"] = df_codes_dev_ner["code"].apply(lambda x: x.split('/')[0])
-df_codes_dev_ner["code_suf"] = df_codes_dev_ner["code"].apply(lambda x: '/'.join(x.split('/')[1:]))
-
-
-# In[15]:
-
-# In[34]:
-
-
-assert ~df_codes_dev_ner[["doc_id", "start", "end"]].duplicated().any()
-
-
-# In[16]:
-
-# In[35]:
-
-
-df_codes_dev_ner_final = df_codes_dev_ner.copy()
-
-
-# In[17]:
-
-# In[36]:
-
-
-print(df_codes_dev_ner_final.shape[0])
 
 
 # ## Creation of annotated sequences<br>
@@ -397,17 +309,15 @@ print(df_codes_dev_ner_final.shape[0])
 
 # In[18]:
 
-# In[37]:
+# In[28]:
 
 
-train_dev_codes_pre = sorted(set(df_codes_dev_ner_final["code_pre"].values).union(set(
-    df_codes_train_ner_final["code_pre"].values
-)))
+train_dev_codes_pre = sorted(set(df_codes_train_ner_final["code_pre"].values))
 
 
 # In[19]:
 
-# In[38]:
+# In[29]:
 
 
 len(train_dev_codes_pre)
@@ -415,15 +325,15 @@ len(train_dev_codes_pre)
 
 # In[20]:
 
-# In[39]:
+# In[30]:
 
 
-train_dev_codes_suf = sorted(set(df_codes_dev_ner_final["code_suf"].values).union(set(df_codes_train_ner_final["code_suf"].values))) 
+train_dev_codes_suf = sorted(set(df_codes_train_ner_final["code_suf"].values))
 
 
 # In[21]:
 
-# In[40]:
+# In[31]:
 
 
 print(len(train_dev_codes_suf))
@@ -433,7 +343,7 @@ print(len(train_dev_codes_suf))
 
 # Create IOB-2 and Clinical-Coding label encoders as dict (more computationally efficient)
 
-# In[41]:
+# In[32]:
 
 
 iob_lab_encoder = {"B": 0, "I": 1, "O": 2}
@@ -442,7 +352,7 @@ iob_lab_decoder = {0: "B", 1: "I", 2: "O"}
 
 # Code-pre
 
-# In[42]:
+# In[33]:
 
 
 code_pre_lab_encoder = {}
@@ -460,7 +370,7 @@ if code_strat.upper() == "O":
 
 # Code-suf
 
-# In[43]:
+# In[34]:
 
 
 code_suf_lab_encoder = {}
@@ -478,7 +388,7 @@ if code_strat.upper() == "O":
 
 # In[23]:
 
-# In[44]:
+# In[35]:
 
 
 print(len(iob_lab_encoder), len(iob_lab_decoder))
@@ -486,7 +396,7 @@ print(len(iob_lab_encoder), len(iob_lab_decoder))
 
 # In[24]:
 
-# In[45]:
+# In[36]:
 
 
 print(len(code_pre_lab_encoder), len(code_pre_lab_decoder))
@@ -494,7 +404,7 @@ print(len(code_pre_lab_encoder), len(code_pre_lab_decoder))
 
 # In[25]:
 
-# In[46]:
+# In[37]:
 
 
 print(len(code_suf_lab_encoder), len(code_suf_lab_decoder))
@@ -506,15 +416,15 @@ print(len(code_suf_lab_encoder), len(code_suf_lab_decoder))
 
 # In[27]:
 
-# In[47]:
+# In[38]:
 
 
-train_dev_codes = sorted(set(df_codes_dev_ner_final["code"].values).union(set(df_codes_train_ner_final["code"].values))) 
+train_dev_codes = sorted(set(df_codes_train_ner_final["code"].values))
 
 
 # In[28]:
 
-# In[48]:
+# In[39]:
 
 
 print(len(train_dev_codes))
@@ -522,13 +432,13 @@ print(len(train_dev_codes))
 
 # In[29]:
 
-# In[49]:
+# In[40]:
 
 
 from sklearn.preprocessing import MultiLabelBinarizer
 
 
-# In[50]:
+# In[41]:
 
 
 mlb_encoder = MultiLabelBinarizer()
@@ -541,7 +451,7 @@ mlb_encoder.fit([train_dev_codes])
 
 # In[30]:
 
-# In[51]:
+# In[42]:
 
 
 train_doc_list = sorted(set(df_codes_train_ner_final["doc_id"]))
@@ -549,7 +459,7 @@ train_doc_list = sorted(set(df_codes_train_ner_final["doc_id"]))
 
 # In[31]:
 
-# In[52]:
+# In[43]:
 
 
 ss_sub_corpus_path = ss_corpus_path + "training/"
@@ -559,49 +469,18 @@ ss_dict_train = load_ss_files(ss_files, ss_sub_corpus_path)
 
 # In[32]:
 
-# In[53]:
+# In[44]:
+
+
+df_mock = pd.DataFrame({"doc_id": [], "start": [], "end": []})
+
+
+# In[45]:
 
 
 train_ind, train_att, train_type, train_y, train_text_y, train_frag, train_start_end_frag,                 train_word_id = ss_create_input_data_ner(df_text=df_text_train, text_col=text_col, 
-                                    df_ann=df_codes_dev_ner_final, df_ann_text=df_codes_dev_ner_final, # ignore text-level
+                                    df_ann=df_mock, df_ann_text=df_mock, # ignore text-level
                                     doc_list=train_doc_list, ss_dict=ss_dict_train,
-                                    tokenizer=tokenizer, 
-                                    lab_encoder_list=[iob_lab_encoder, code_pre_lab_encoder, code_suf_lab_encoder], 
-                                    text_label_encoder=mlb_encoder, seq_len=SEQ_LEN, ign_value=IGNORE_VALUE, 
-                                    strategy=ANN_STRATEGY, greedy=GREEDY, 
-                                    subtask=subtask_ann, code_strat=code_strat)
-
-
-# ### Development corpus<br>
-# <br>
-# Only development texts with NER annotations are considered:
-
-# In[33]:
-
-# In[54]:
-
-
-dev_doc_list = sorted(set(df_codes_dev_ner_final["doc_id"]))
-
-
-# In[34]:
-
-# In[55]:
-
-
-ss_sub_corpus_path = ss_corpus_path + "development/"
-ss_files = [f for f in os.listdir(ss_sub_corpus_path) if os.path.isfile(ss_sub_corpus_path + f)]
-ss_dict_dev = load_ss_files(ss_files, ss_sub_corpus_path)
-
-
-# In[35]:
-
-# In[56]:
-
-
-dev_ind, dev_att, dev_type, dev_y, dev_text_y, dev_frag, dev_start_end_frag,                 dev_word_id = ss_create_input_data_ner(df_text=df_text_dev, text_col=text_col, 
-                                    df_ann=df_codes_train_ner_final, df_ann_text=df_codes_train_ner_final, # ignore text-level
-                                    doc_list=dev_doc_list, ss_dict=ss_dict_dev,
                                     tokenizer=tokenizer, 
                                     lab_encoder_list=[iob_lab_encoder, code_pre_lab_encoder, code_suf_lab_encoder], 
                                     text_label_encoder=mlb_encoder, seq_len=SEQ_LEN, ign_value=IGNORE_VALUE, 
@@ -615,7 +494,7 @@ dev_ind, dev_att, dev_type, dev_y, dev_text_y, dev_frag, dev_start_end_frag,    
 
 # In[36]:
 
-# In[57]:
+# In[46]:
 
 
 test_doc_list = sorted(set(df_text_test["doc_id"]))
@@ -627,7 +506,7 @@ test_doc_list = sorted(set(df_text_test["doc_id"]))
 
 # In[38]:
 
-# In[58]:
+# In[47]:
 
 
 ss_sub_corpus_path = ss_corpus_path + "test-background/"
@@ -637,11 +516,11 @@ ss_dict_test = load_ss_files(ss_files, ss_sub_corpus_path)
 
 # In[39]:
 
-# In[59]:
+# In[48]:
 
 
 test_ind, test_att, test_type, test_y, test_text_y, test_frag, test_start_end_frag,                 test_word_id = ss_create_input_data_ner(df_text=df_text_test, text_col=text_col, 
-                                    df_ann=df_codes_dev_ner_final, df_ann_text=df_codes_dev_ner_final, # ignore text-level
+                                    df_ann=df_mock, df_ann_text=df_mock, # ignore text-level
                                     doc_list=test_doc_list, ss_dict=ss_dict_test,
                                     tokenizer=tokenizer, 
                                     lab_encoder_list=[iob_lab_encoder, code_pre_lab_encoder, code_suf_lab_encoder], 
@@ -650,53 +529,13 @@ test_ind, test_att, test_type, test_y, test_text_y, test_frag, test_start_end_fr
                                     subtask=subtask_ann, code_strat=code_strat)
 
 
-# ### Training & Development corpus<br>
-# <br>
-# We merge the previously generated datasets:
-
-# In[40]:
-
-# Indices
-
-# In[60]:
-
-
-train_dev_ind = np.concatenate((train_ind, dev_ind))
-
-
-# In[41]:
-
-# In[61]:
-
-
-print(train_dev_ind.shape)
-
-
-# In[42]:
-
-# Attention
-
-# In[62]:
-
-
-train_dev_att = np.concatenate((train_att, dev_att))
-
-
-# In[43]:
-
-# In[63]:
-
-
-print(train_dev_att.shape)
-
-
 # In[44]:
 
 # Additional Embedding & CLS samples
 
 # In[45]:
 
-# In[64]:
+# In[49]:
 
 
 df_codes_train_ner_final = df_codes_train_ner_final.rename(columns={"doc_id": "clinical_case"})
@@ -706,7 +545,7 @@ df_codes_train_ner_final['location'] = df_codes_train_ner_final.apply(lambda x: 
 
 # In[46]:
 
-# In[65]:
+# In[50]:
 
 
 train_cls_y, train_cls_ind, df_train_cls_ann = create_cls_emb_y_samples(
@@ -718,44 +557,12 @@ train_cls_y, train_cls_ind, df_train_cls_ann = create_cls_emb_y_samples(
 
 # In[47]:
 
-# In[66]:
+# In[51]:
 
 
 train_cls_code_pre_y = np.array([code_pre_lab_encoder[sample[0][-1][0]] for sample in train_cls_y])
 train_cls_code_suf_y = np.array([code_suf_lab_encoder[sample[0][-1][1]] for sample in train_cls_y])
 train_cls_emb_y = np.array([sample[1] for sample in train_cls_y])
-
-
-# In[48]:
-
-# In[67]:
-
-
-df_codes_dev_ner_final = df_codes_dev_ner_final.rename(columns={"doc_id": "clinical_case"})
-df_codes_dev_ner_final['location'] = df_codes_dev_ner_final.apply(lambda x: str(x['start']) + ' ' + str(x['end']), 
-                                                                      axis=1)
-
-
-# In[49]:
-
-# In[68]:
-
-
-dev_cls_y, dev_cls_ind, df_dev_cls_ann = create_cls_emb_y_samples(
-    df_ann=df_codes_dev_ner_final, doc_list=dev_doc_list, arr_frag=dev_frag,
-    arr_start_end=dev_start_end_frag, arr_word_id=dev_word_id, arr_ind=dev_ind,
-    seq_len=SEQ_LEN, empty_samples=EMPTY_SAMPLES, subtask=subtask_ann
-)
-
-
-# In[50]:
-
-# In[69]:
-
-
-dev_cls_code_pre_y = np.array([code_pre_lab_encoder[sample[0][-1][0]] for sample in dev_cls_y])
-dev_cls_code_suf_y = np.array([code_suf_lab_encoder[sample[0][-1][1]] for sample in dev_cls_y])
-dev_cls_emb_y = np.array([sample[1] for sample in dev_cls_y])
 
 
 # In[51]:
@@ -764,7 +571,7 @@ dev_cls_emb_y = np.array([sample[1] for sample in dev_cls_y])
 
 # In[52]:
 
-# In[70]:
+# In[52]:
 
 
 def create_ind_emb_mention_sep(arr_ind, arr_emb, tokenizer=tokenizer,
@@ -817,23 +624,12 @@ def create_ind_emb_mention_sep(arr_ind, arr_emb, tokenizer=tokenizer,
 
 # In[53]:
 
-# In[71]:
+# In[53]:
 
 
 train_cls_ind, train_cls_emb = create_ind_emb_mention_sep(
     arr_ind=train_cls_ind, 
     arr_emb=train_cls_emb_y
-)
-
-
-# In[54]:
-
-# In[72]:
-
-
-dev_cls_ind, dev_cls_emb = create_ind_emb_mention_sep(
-    arr_ind=dev_cls_ind, 
-    arr_emb=dev_cls_emb_y
 )
 
 
@@ -843,7 +639,7 @@ dev_cls_ind, dev_cls_emb = create_ind_emb_mention_sep(
 
 # In[56]:
 
-# In[73]:
+# In[54]:
 
 
 def calculate_max_seq(list_list_arr_seq):
@@ -858,15 +654,15 @@ def calculate_max_seq(list_list_arr_seq):
 
 # In[57]:
 
-# In[74]:
+# In[55]:
 
 
-print(calculate_max_seq([train_cls_ind, dev_cls_ind]))
+print(calculate_max_seq([train_cls_ind]))
 
 
 # In[58]:
 
-# In[75]:
+# In[56]:
 
 
 MAX_SEQ_LEN = 256
@@ -874,7 +670,7 @@ MAX_SEQ_LEN = 256
 
 # In[59]:
 
-# In[76]:
+# In[57]:
 
 
 def pad_inidices_emb_create_att(list_ind_sep, list_emb_sep, 
@@ -903,7 +699,7 @@ def pad_inidices_emb_create_att(list_ind_sep, list_emb_sep,
 
 # In[60]:
 
-# In[77]:
+# In[58]:
 
 
 train_cls_ind, train_cls_emb, train_cls_att = pad_inidices_emb_create_att(
@@ -914,59 +710,16 @@ train_cls_ind, train_cls_emb, train_cls_att = pad_inidices_emb_create_att(
 
 # In[61]:
 
-# In[78]:
+# In[59]:
 
 
 print(train_cls_code_pre_y.shape, train_cls_code_suf_y.shape, 
       train_cls_ind.shape, train_cls_emb.shape, train_cls_att.shape)
 
 
-# In[62]:
-
-# In[79]:
-
-
-dev_cls_ind, dev_cls_emb, dev_cls_att = pad_inidices_emb_create_att(
-    list_ind_sep=dev_cls_ind,
-    list_emb_sep=dev_cls_emb
-)
-
-
-# In[63]:
-
-# In[80]:
-
-
-print(dev_cls_code_pre_y.shape, dev_cls_code_suf_y.shape, 
-      dev_cls_ind.shape, dev_cls_emb.shape, dev_cls_att.shape)
-
-
-# In[64]:
-
-# Train + Dev
-
-# In[81]:
-
-
-train_dev_cls_code_pre_y = np.concatenate((train_cls_code_pre_y, dev_cls_code_pre_y))
-train_dev_cls_code_suf_y = np.concatenate((train_cls_code_suf_y, dev_cls_code_suf_y))
-train_dev_cls_ind = np.concatenate((train_cls_ind, dev_cls_ind))
-train_dev_cls_emb = np.concatenate((train_cls_emb, dev_cls_emb))
-train_dev_cls_att = np.concatenate((train_cls_att, dev_cls_att))
-
-
-# In[65]:
-
-# In[82]:
-
-
-print(train_dev_cls_code_pre_y.shape, train_dev_cls_code_suf_y.shape, 
-      train_dev_cls_ind.shape, train_dev_cls_emb.shape, train_dev_cls_att.shape)
-
-
 # In[66]:
 
-# In[123]:
+# In[60]:
 
 
 def format_ner_preds(ner_file_name=df_iob_preds_name, ner_dir=RES_DIR, doc_list=test_doc_list, arr_frag=test_frag,
@@ -1003,32 +756,6 @@ def format_ner_preds(ner_file_name=df_iob_preds_name, ner_dir=RES_DIR, doc_list=
     return cls_ind_ner, cls_emb_ner, cls_att_ner, df_cls_ann_ner
 
 
-# In[67]:
-
-# In[124]:
-
-
-dev_cls_ind_ner, dev_cls_emb_ner, dev_cls_att_ner, df_dev_cls_ann_ner = format_ner_preds(
-    ner_file_name=df_iob_preds_name,
-    doc_list=dev_doc_list,
-    arr_frag=dev_frag,
-    arr_start_end=dev_start_end_frag,
-    arr_word_id=dev_word_id,
-    arr_ind=dev_ind,
-    prefix_name="df_dev_preds_"
-)
-
-
-# In[68]:
-
-# In[125]:
-
-
-test_cls_ind_ner, test_cls_emb_ner, test_cls_att_ner, df_test_cls_ann_ner = format_ner_preds(
-    ner_file_name=df_iob_preds_name
-)
-
-
 # ## Fine-tuning<br>
 # <br>
 # Using the corpus of labeled sentences, we fine-tune the model on a multi-label sentence classification task.
@@ -1039,7 +766,7 @@ test_cls_ind_ner, test_cls_emb_ner, test_cls_att_ner, df_test_cls_ann_ner = form
 
 # In[70]:
 
-# In[86]:
+# In[61]:
 
 
 physical_devices = tf.config.list_physical_devices('GPU')
@@ -1048,7 +775,7 @@ print(physical_devices)
 
 # In[71]:
 
-# In[87]:
+# In[62]:
 
 
 for gpu_instance in physical_devices: 
@@ -1057,7 +784,7 @@ for gpu_instance in physical_devices:
 
 # In[ ]:
 
-# In[88]:
+# In[63]:
 
 
 if model_name.split('_')[0] in ('beto', 'mbert'):
@@ -1071,7 +798,7 @@ else: # default
 
 # In[73]:
 
-# In[89]:
+# In[64]:
 
 
 from tensorflow.keras import Input, Model
@@ -1079,14 +806,14 @@ from tensorflow.keras.layers import Dense, Activation
 from tensorflow.keras.initializers import GlorotUniform
 
 
-# In[90]:
+# In[65]:
 
 
 code_pre_num_labels = len(code_pre_lab_encoder) - 1 if not EMPTY_SAMPLES else len(code_pre_lab_encoder)
 code_suf_num_labels = len(code_suf_lab_encoder) - 1 if not EMPTY_SAMPLES else len(code_suf_lab_encoder)
 
 
-# In[91]:
+# In[66]:
 
 
 input_ids = Input(shape=(MAX_SEQ_LEN,), name='input_ids', dtype='int64')
@@ -1094,7 +821,7 @@ attention_mask = Input(shape=(MAX_SEQ_LEN,), name='attention_mask', dtype='int64
 ner_ann_ids = Input(shape=(MAX_SEQ_LEN,), name='ner_ann_ids', dtype='int64')
 
 
-# In[92]:
+# In[67]:
 
 
 out_cls = model.layers[0](input_ids=input_ids, 
@@ -1104,7 +831,7 @@ out_cls = model.layers[0](input_ids=input_ids,
 
 # Code-pre
 
-# In[93]:
+# In[68]:
 
 
 out_cls_code_pre = Dense(units=code_pre_num_labels, kernel_initializer=GlorotUniform(seed=random_seed))(out_cls) # Multi-class classification 
@@ -1113,14 +840,14 @@ out_cls_code_pre_model = Activation(activation='softmax', name='code_pre_cls_out
 
 # Code-suf
 
-# In[94]:
+# In[69]:
 
 
 out_cls_code_suf = Dense(units=code_suf_num_labels, kernel_initializer=GlorotUniform(seed=random_seed))(out_cls) # Multi-class classification 
 out_cls_code_suf_model = Activation(activation='softmax', name='code_suf_cls_output')(out_cls_code_suf)
 
 
-# In[95]:
+# In[70]:
 
 
 model = Model(inputs=[input_ids, attention_mask, ner_ann_ids], outputs=[out_cls_code_pre_model, out_cls_code_suf_model])
@@ -1128,7 +855,7 @@ model = Model(inputs=[input_ids, attention_mask, ner_ann_ids], outputs=[out_cls_
 
 # In[74]:
 
-# In[96]:
+# In[71]:
 
 
 print(model.summary())
@@ -1136,7 +863,7 @@ print(model.summary())
 
 # In[75]:
 
-# In[97]:
+# In[72]:
 
 
 print(model.input)
@@ -1144,7 +871,7 @@ print(model.input)
 
 # In[76]:
 
-# In[98]:
+# In[73]:
 
 
 print(model.output)
@@ -1154,16 +881,15 @@ print(model.output)
 
 # GS data
 
-# In[99]:
+# In[74]:
 
 
-df_dev_gs = format_ner_gs(dev_gs_path, subtask=subtask)
 df_test_gs = format_ner_gs(test_gs_path, subtask=subtask)
 
 
 # In[79]:
 
-# In[100]:
+# In[75]:
 
 
 import tensorflow_addons as tfa
@@ -1171,7 +897,7 @@ from tensorflow.keras import losses
 import time
 
 
-# In[101]:
+# In[76]:
 
 
 optimizer = tfa.optimizers.RectifiedAdam(learning_rate=LR)
@@ -1181,7 +907,7 @@ loss_weights = {'code_pre_cls_output': 1, 'code_suf_cls_output': 1}
 model.compile(optimizer=optimizer, loss=loss, loss_weights=loss_weights)
 
 
-# In[ ]:
+# In[103]:
 
 
 start_time = time.time()
@@ -1190,11 +916,11 @@ start_time = time.time()
 # In[ ]:
 
 
-history = model.fit(x={'input_ids': train_dev_cls_ind, 
-                       'attention_mask': train_dev_cls_att,
-                       'ner_ann_ids': train_dev_cls_emb}, 
-                    y={'code_pre_cls_output': train_dev_cls_code_pre_y, 
-                       'code_suf_cls_output': train_dev_cls_code_suf_y}, 
+history = model.fit(x={'input_ids': train_cls_ind, 
+                       'attention_mask': train_cls_att,
+                       'ner_ann_ids': train_cls_emb}, 
+                    y={'code_pre_cls_output': train_cls_code_pre_y, 
+                       'code_suf_cls_output': train_cls_code_suf_y}, 
                     batch_size=BATCH_SIZE, epochs=EPOCHS, shuffle=True,
                     verbose=2)
 
@@ -1209,103 +935,89 @@ print()
 
 # ## Evaluation
 
-# ### Development
+# #### Full
+
+# In[78]:
+
+
+df_test_gs_full = df_test_gs.sort_values(by=["clinical_case", "start_pos_gs", "end_pos_gs"])
+
+
+# In[79]:
+
+
+df_test_gs_full_ner = df_test_gs_full[["clinical_case", "start_pos_gs", "end_pos_gs", "span"]].rename( 
+    columns={"start_pos_gs": "start", "end_pos_gs": "end", "span": "text"}
+)
+
+
+# In[80]:
+
+
+df_test_gs_full_ner['clinical_case'] = df_test_gs_full_ner['clinical_case'].apply(
+    lambda x: x.split('.')[0]
+)
+
+
+# In[ ]:
+
+
+# Generate input data
+
 
 # In[81]:
 
+
+test_full_cls_ind_ner, test_full_cls_emb_ner, test_full_cls_att_ner, df_test_full_cls_ann_ner = format_ner_preds(
+    df_preds_ner=df_test_gs_full_ner
+)
+
+
+# In[ ]:
+
+
+# Predictions
+
+
 # In[ ]:
 
 
 start_time = time.time()
 
+
+# In[87]:
 
 # In[82]:
 
-# In[103]:
+
+y_pred_test_full_cls = model.predict({'input_ids': test_full_cls_ind_ner, 
+                                 'attention_mask': test_full_cls_att_ner,
+                                'ner_ann_ids': test_full_cls_emb_ner})
 
 
-y_pred_dev_cls = model.predict({'input_ids': dev_cls_ind_ner, 
-                                'attention_mask': dev_cls_att_ner,
-                                'ner_ann_ids': dev_cls_emb_ner})
+# In[88]:
 
+# In[ ]:
+
+
+np.save(file="test_full_preds_code_pre_" + JOB_NAME + ".npy", arr=y_pred_test_full_cls[0])
+
+
+# In[89]:
+
+# In[ ]:
+
+
+np.save(file="test_full_preds_code_suf_" + JOB_NAME + ".npy", arr=y_pred_test_full_cls[1])
+
+
+# In[90]:
 
 # In[83]:
 
-# In[104]:
 
-
-df_dev_preds = cls_code_norm_preds_brat_format(
-    y_pred_cls=y_pred_dev_cls, df_pred_ner=df_dev_cls_ann_ner, 
-    code_decoder_list=[code_pre_lab_decoder, code_suf_lab_decoder],
-    subtask=subtask_ann,
-    codes_pre_o_mask=None,
-    codes_pre_suf_mask=None
-)
-
-
-# In[84]:
-
-# In[ ]:
-
-
-print(calculate_ner_metrics(gs=df_dev_gs, pred=format_ner_pred_df(gs_path=dev_gs_path, df_preds=df_dev_preds, 
-                                                                  subtask=subtask),
-                            subtask=subtask))
-
-
-# In[85]:
-
-# In[ ]:
-
-
-end_time = time.time()
-print("--- Dev evaluation: %s seconds ---" % (end_time - start_time))
-print()
-
-
-# ### Test
-
-# In[86]:
-
-# In[ ]:
-
-
-start_time = time.time()
-
-
-# In[87]:
-
-# In[107]:
-
-
-y_pred_test_cls = model.predict({'input_ids': test_cls_ind_ner, 
-                                 'attention_mask': test_cls_att_ner,
-                                'ner_ann_ids': test_cls_emb_ner})
-
-
-# In[88]:
-
-# In[ ]:
-
-
-np.save(file="test_preds_code_pre_" + JOB_NAME + ".npy", arr=y_pred_test_cls[0])
-
-
-# In[89]:
-
-# In[ ]:
-
-
-np.save(file="test_preds_code_suf_" + JOB_NAME + ".npy", arr=y_pred_test_cls[1])
-
-
-# In[90]:
-
-# In[108]:
-
-
-df_test_preds = cls_code_norm_preds_brat_format(
-    y_pred_cls=y_pred_test_cls, df_pred_ner=df_test_cls_ann_ner, 
+df_test_full_preds = cls_code_norm_preds_brat_format(
+    y_pred_cls=y_pred_test_full_cls, df_pred_ner=df_test_full_cls_ann_ner, 
     code_decoder_list=[code_pre_lab_decoder, code_suf_lab_decoder],
     subtask=subtask_ann,
     codes_pre_o_mask=None,
@@ -1318,9 +1030,12 @@ df_test_preds = cls_code_norm_preds_brat_format(
 # In[ ]:
 
 
-print(calculate_ner_metrics(gs=df_test_gs, pred=format_ner_pred_df(gs_path=test_gs_path, df_preds=df_test_preds, 
-                                                                   subtask=subtask),
-                            subtask=subtask))
+print(round(
+    (
+        pd.Series(df_test_gs_full["code_gs"].values) == pd.Series(df_test_full_preds["code_pred"].values)
+    ).value_counts(normalize=True)[True], 
+    4
+))
 
 
 # In[92]:
@@ -1329,7 +1044,7 @@ print(calculate_ner_metrics(gs=df_test_gs, pred=format_ner_pred_df(gs_path=test_
 
 
 end_time = time.time()
-print("--- Test evaluation: %s seconds ---" % (end_time - start_time))
+print("--- Full test evaluation: %s seconds ---" % (end_time - start_time))
 print()
 
 
@@ -1340,235 +1055,102 @@ print()
 # In[ ]:
 
 
-df_test_preds.to_csv("df_test_preds_" + JOB_NAME + ".csv", index=False, header=True, sep = '\t')
+df_test_full_preds.to_csv("df_test_full_preds_" + JOB_NAME + ".csv", index=True, header=True, sep = '\t')
 
 
-# ### Additional predictions
+# #### Filtering
 
-# #### Ensemble
+# In[89]:
+
+
+train_dev_mentions = sorted(set([x.lower() for x in set(
+    df_codes_train_ner_final["text_ref"].values
+)]))
+
+
+# In[90]:
+
+
+df_test_gs_filt = df_test_gs[df_test_gs.span.apply(
+    lambda x: x.lower() not in train_dev_mentions
+)].sort_values(by=["clinical_case", "start_pos_gs", "end_pos_gs"])
+
+
+# In[91]:
+
+
+df_test_gs_filt_ner = df_test_gs_filt[["clinical_case", "start_pos_gs", "end_pos_gs", "span"]].rename( 
+    columns={"start_pos_gs": "start", "end_pos_gs": "end", "span": "text"}
+)
+
+
+# In[92]:
+
+
+df_test_gs_filt_ner['clinical_case'] = df_test_gs_filt_ner['clinical_case'].apply(
+    lambda x: x.split('.')[0]
+)
+
+
+# In[ ]:
+
+
+# Generate input data
+
+
+# In[93]:
+
+
+test_filt_cls_ind_ner, test_filt_cls_emb_ner, test_filt_cls_att_ner, df_test_filt_cls_ann_ner = format_ner_preds(
+    df_preds_ner=df_test_gs_filt_ner
+)
+
+
+# In[ ]:
+
+
+# Predictions
+
+
+# In[ ]:
+
+
+start_time = time.time()
+
+
+# In[87]:
+
+# In[94]:
+
+
+y_pred_test_filt_cls = model.predict({'input_ids': test_filt_cls_ind_ner, 
+                                 'attention_mask': test_filt_cls_att_ner,
+                                'ner_ann_ids': test_filt_cls_emb_ner})
+
+
+# In[88]:
+
+# In[ ]:
+
+
+np.save(file="test_filt_preds_code_pre_" + JOB_NAME + ".npy", arr=y_pred_test_filt_cls[0])
+
+
+# In[89]:
+
+# In[ ]:
+
+
+np.save(file="test_filt_preds_code_suf_" + JOB_NAME + ".npy", arr=y_pred_test_filt_cls[1])
+
+
+# In[90]:
 
 # In[95]:
 
-# In[ ]:
 
-
-for ens_name in ens_model_name_arr:
-    test_cls_ind_ner, test_cls_emb_ner, test_cls_att_ner, df_test_cls_ann_ner = format_ner_preds(
-        ner_file_name=df_iob_preds_name_ens + ens_name,
-        ner_dir=RES_DIR_ENS
-    )
-    if (hier_iob_exec == 1) and (random_exec == 1):
-        df_test_cls_ann_ner.to_csv(RES_DIR_ENS + "df_test_preds_ens_ner_" + ens_name + "_c_hier_task_cls_" +                                    model_name + "_ann.csv", index=False, header=True, sep = '\t')
-    
-    start_time = time.time()
-    y_pred_test_cls = model.predict({'input_ids': test_cls_ind_ner, 
-                                 'attention_mask': test_cls_att_ner,
-                                'ner_ann_ids': test_cls_emb_ner})
-    np.save(file="test_preds_code_pre_ens_ner_" + ens_name + "_" + JOB_NAME + ".npy", arr=y_pred_test_cls[0])
-    np.save(file="test_preds_code_suf_ens_ner_" + ens_name + "_" + JOB_NAME + ".npy", arr=y_pred_test_cls[1])
-    df_test_preds = cls_code_norm_preds_brat_format(
-        y_pred_cls=y_pred_test_cls, df_pred_ner=df_test_cls_ann_ner, 
-        code_decoder_list=[code_pre_lab_decoder, code_suf_lab_decoder],
-        subtask=subtask_ann,
-        codes_pre_o_mask=None,
-        codes_pre_suf_mask=None
-    )
-    print(calculate_ner_metrics(gs=df_test_gs, pred=format_ner_pred_df(gs_path=test_gs_path, df_preds=df_test_preds, 
-                                                                       subtask=subtask),
-                                subtask=subtask))
-    end_time = time.time()
-    print("--- Ensemble NER " + ens_name + " evaluation: %s seconds ---" % (end_time - start_time))
-    print()
-    # Save final results DF
-    df_test_preds.to_csv("df_test_preds_ens_ner_" + ens_name + "_" + JOB_NAME + ".csv", index=False, header=True, sep = '\t')
-
-
-# #### Multi-task NER
-
-# In[96]:
-
-# In[126]:
-
-
-test_cls_ind_ner, test_cls_emb_ner, test_cls_att_ner, df_test_cls_ann_ner = format_ner_preds(
-    ner_file_name=df_iob_preds_name_multi 
-)
-
-
-# In[97]:
-
-# In[ ]:
-
-
-start_time = time.time()
-
-
-# In[98]:
-
-# In[127]:
-
-
-y_pred_test_cls = model.predict({'input_ids': test_cls_ind_ner, 
-                                 'attention_mask': test_cls_att_ner,
-                                'ner_ann_ids': test_cls_emb_ner})
-
-
-# In[99]:
-
-# In[ ]:
-
-
-np.save(file="test_preds_code_pre_multi_task_ner_" + str(multi_iob_exec) + "_" + JOB_NAME + ".npy", arr=y_pred_test_cls[0])
-
-
-# In[100]:
-
-# In[ ]:
-
-
-np.save(file="test_preds_code_suf_multi_task_ner_" + str(multi_iob_exec) + "_" + JOB_NAME + ".npy", arr=y_pred_test_cls[1])
-
-
-# In[101]:
-
-# In[128]:
-
-
-df_test_preds = cls_code_norm_preds_brat_format(
-    y_pred_cls=y_pred_test_cls, df_pred_ner=df_test_cls_ann_ner, 
-    code_decoder_list=[code_pre_lab_decoder, code_suf_lab_decoder],
-    subtask=subtask_ann,
-    codes_pre_o_mask=None,
-    codes_pre_suf_mask=None
-)
-
-
-# In[102]:
-
-# In[ ]:
-
-
-print(calculate_ner_metrics(gs=df_test_gs, pred=format_ner_pred_df(gs_path=test_gs_path, df_preds=df_test_preds, 
-                                                                   subtask=subtask),
-                            subtask=subtask))
-
-
-# In[103]:
-
-# In[ ]:
-
-
-end_time = time.time()
-print("--- Multi-task NER evaluation: %s seconds ---" % (end_time - start_time))
-
-
-# In[104]:
-
-# Save final results DF
-
-# In[ ]:
-
-
-df_test_preds.to_csv("df_test_preds_multi_task_ner_" + str(multi_iob_exec) + "_" + JOB_NAME + ".csv", index=False, header=True, sep = '\t')
-
-
-# #### Zero-shot
-
-# In[130]:
-
-
-test_codes = sorted(set(df_test_gs["code_gs"]))
-
-
-# In[131]:
-
-
-zero_test_codes = set(test_codes) - set(train_dev_codes)
-
-
-# In[132]:
-
-
-df_test_gs_zero = df_test_gs[df_test_gs.code_gs.apply(
-    lambda x: x in zero_test_codes
-)].sort_values(by=["clinical_case", "start_pos_gs", "end_pos_gs"])
-
-
-# In[133]:
-
-
-df_test_gs_zero_ner = df_test_gs_zero[["clinical_case", "start_pos_gs", "end_pos_gs", "span"]].rename( 
-    columns={"start_pos_gs": "start", "end_pos_gs": "end", "span": "text"}
-)
-
-
-# In[134]:
-
-
-df_test_gs_zero_ner['clinical_case'] = df_test_gs_zero_ner['clinical_case'].apply(
-    lambda x: x.split('.')[0]
-)
-
-
-# In[ ]:
-
-
-# Generate input data
-
-
-# In[135]:
-
-
-test_zero_cls_ind_ner, test_zero_cls_emb_ner, test_zero_cls_att_ner, df_test_zero_cls_ann_ner = format_ner_preds(
-    df_preds_ner=df_test_gs_zero_ner
-)
-
-
-# In[ ]:
-
-
-# Predictions
-
-
-# In[ ]:
-
-
-start_time = time.time()
-
-
-# In[87]:
-
-# In[136]:
-
-
-y_pred_test_zero_cls = model.predict({'input_ids': test_zero_cls_ind_ner, 
-                                 'attention_mask': test_zero_cls_att_ner,
-                                'ner_ann_ids': test_zero_cls_emb_ner})
-
-
-# In[88]:
-
-# In[ ]:
-
-
-np.save(file="test_zero_preds_code_pre_" + JOB_NAME + ".npy", arr=y_pred_test_zero_cls[0])
-
-
-# In[89]:
-
-# In[ ]:
-
-
-np.save(file="test_zero_preds_code_suf_" + JOB_NAME + ".npy", arr=y_pred_test_zero_cls[1])
-
-
-# In[90]:
-
-# In[137]:
-
-
-df_test_zero_preds = cls_code_norm_preds_brat_format(
-    y_pred_cls=y_pred_test_zero_cls, df_pred_ner=df_test_zero_cls_ann_ner, 
+df_test_filt_preds = cls_code_norm_preds_brat_format(
+    y_pred_cls=y_pred_test_filt_cls, df_pred_ner=df_test_filt_cls_ann_ner, 
     code_decoder_list=[code_pre_lab_decoder, code_suf_lab_decoder],
     subtask=subtask_ann,
     codes_pre_o_mask=None,
@@ -1583,7 +1165,7 @@ df_test_zero_preds = cls_code_norm_preds_brat_format(
 
 print(round(
     (
-        pd.Series(df_test_gs_zero["code_gs"].values) == pd.Series(df_test_zero_preds["code_pred"].values)
+        pd.Series(df_test_gs_filt["code_gs"].values) == pd.Series(df_test_filt_preds["code_pred"].values)
     ).value_counts(normalize=True)[True], 
     4
 ))
@@ -1595,7 +1177,7 @@ print(round(
 
 
 end_time = time.time()
-print("--- Zero-shot test evaluation: %s seconds ---" % (end_time - start_time))
+print("--- Filtering test evaluation: %s seconds ---" % (end_time - start_time))
 print()
 
 
@@ -1606,171 +1188,5 @@ print()
 # In[ ]:
 
 
-df_test_zero_preds.to_csv("df_test_zero_preds_" + JOB_NAME + ".csv", index=True, header=True, sep = '\t')
-
-
-# #### Few-shots
-
-# In[139]:
-
-
-dist_train_dev_codes = pd.concat((
-    df_codes_train_ner_final.code, 
-    df_codes_dev_ner_final.code
-)).value_counts()
-
-
-# In[140]:
-
-
-few_train_dev_codes = sorted(set(
-    dist_train_dev_codes[dist_train_dev_codes <= 5].index.values
-))
-
-
-# In[141]:
-
-
-len(few_train_dev_codes)
-
-
-# In[142]:
-
-
-few_codes = set(few_train_dev_codes).union(set(zero_test_codes))
-
-
-# In[143]:
-
-
-len(few_codes)
-
-
-# In[144]:
-
-
-df_test_gs_few = df_test_gs[df_test_gs.code_gs.apply(
-    lambda x: x in few_codes
-)].sort_values(by=["clinical_case", "start_pos_gs", "end_pos_gs"])
-
-
-# In[145]:
-
-
-df_test_gs_few.shape
-
-
-# In[146]:
-
-
-df_test_gs_few_ner = df_test_gs_few[["clinical_case", "start_pos_gs", "end_pos_gs", "span"]].rename( 
-    columns={"start_pos_gs": "start", "end_pos_gs": "end", "span": "text"}
-)
-
-
-# In[147]:
-
-
-df_test_gs_few_ner['clinical_case'] = df_test_gs_few_ner['clinical_case'].apply(
-    lambda x: x.split('.')[0]
-)
-
-
-# In[ ]:
-
-
-# Generate input data
-
-
-# In[148]:
-
-
-test_few_cls_ind_ner, test_few_cls_emb_ner, test_few_cls_att_ner, df_test_few_cls_ann_ner = format_ner_preds(
-    df_preds_ner=df_test_gs_few_ner
-)
-
-
-# In[ ]:
-
-
-# Predictions
-
-
-# In[ ]:
-
-
-start_time = time.time()
-
-
-# In[87]:
-
-# In[149]:
-
-
-y_pred_test_few_cls = model.predict({'input_ids': test_few_cls_ind_ner, 
-                                 'attention_mask': test_few_cls_att_ner,
-                                'ner_ann_ids': test_few_cls_emb_ner})
-
-
-# In[88]:
-
-# In[ ]:
-
-
-np.save(file="test_few_preds_code_pre_" + JOB_NAME + ".npy", arr=y_pred_test_few_cls[0])
-
-
-# In[89]:
-
-# In[ ]:
-
-
-np.save(file="test_few_preds_code_suf_" + JOB_NAME + ".npy", arr=y_pred_test_few_cls[1])
-
-
-# In[90]:
-
-# In[150]:
-
-
-df_test_few_preds = cls_code_norm_preds_brat_format(
-    y_pred_cls=y_pred_test_few_cls, df_pred_ner=df_test_few_cls_ann_ner, 
-    code_decoder_list=[code_pre_lab_decoder, code_suf_lab_decoder],
-    subtask=subtask_ann,
-    codes_pre_o_mask=None,
-    codes_pre_suf_mask=None
-)
-
-
-# In[91]:
-
-# In[ ]:
-
-
-print(round(
-    (
-        pd.Series(df_test_gs_few["code_gs"].values) == pd.Series(df_test_few_preds["code_pred"].values)
-    ).value_counts(normalize=True)[True], 
-    4
-))
-
-
-# In[92]:
-
-# In[ ]:
-
-
-end_time = time.time()
-print("--- Few-shots test evaluation: %s seconds ---" % (end_time - start_time))
-print()
-
-
-# In[93]:
-
-# Save final results DF
-
-# In[ ]:
-
-
-df_test_few_preds.to_csv("df_test_few_preds_" + JOB_NAME + ".csv", index=True, header=True, sep = '\t')
+df_test_filt_preds.to_csv("df_test_filt_preds_" + JOB_NAME + ".csv", index=True, header=True, sep = '\t')
 
