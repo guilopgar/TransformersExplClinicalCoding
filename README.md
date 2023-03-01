@@ -1,6 +1,6 @@
 # Transformers for Explainable Clinical Coding
 
-We provide a description of the content of the different folders to facilitate the reproduction of the results obtained in this work.
+We provide a description of the content of the different folders to facilitate the reproduction of the results obtained in [[1]](#1):
 
 - **datasets**: it contains the link to a zip folder with the corpora from the 3 explainable clinical coding tasks addressed in this study.
 - **models**: it contains the link to a zip folder with the weights of all transformer-based models used in this work.
@@ -9,3 +9,7 @@ We provide a description of the content of the different folders to facilitate t
 - **utils**: utils scripts in python containing auxiliary functions used in the files from the **scripts** folder.
 
 For any additional information, please contact with guilopgar@uma.es
+
+## References
+<a id="1">[1]</a> 
+López-García, G., Jerez, J.M., Ribelles, N., Alba, E., Veredas, F.J.: Explainable clinical coding with in-domain adapted transformers. Journal of Biomedical Informatics 139, 104323 (2023). https://doi.org/10.1016/j.jbi.2023.104323
